@@ -1,0 +1,22 @@
+[
+  "contract",
+  "contract_identifier",
+  "created_by_api",
+  "created_by_user_id",
+  "dataset_catalog",
+  "dataset_group_edit",
+  "id",
+  "mets_object_identifier",
+  "modified_by_api",
+  "modified_by_user_id",
+  "next_version_id",
+  "next_version_identifier",
+  "preservation_reason_description",
+  "preservation_state",
+  "preservation_state_description",
+  "preservation_state_modified",
+  "previous_version_id",
+  "previous_version_identifier",
+  "research_dataset",
+  "version_created"
+]

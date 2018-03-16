@@ -1,0 +1,1679 @@
+
+{
+    "@id":"http://iow.csc.fi/ns/mrd#",
+    "title":"Metax Research Datasets",
+    "modified":"Mon, 09 Oct 2017 14:41:39 EEST",
+    "$schema":"http://json-schema.org/draft-04/schema#",
+    "type":"object",
+    "allOf":[
+        {
+            "$ref":"#/definitions/CatalogRecord"
+        }
+    ],
+    "definitions":{
+        "Activity":{
+            "title":"Activity",
+            "@id":"http://www.w3.org/ns/prov#Activity",
+            "description":"An activity is something that occurs over a period of time and acts upon or with entities; it may include consuming, processing, transforming, modifying, relocating, using, or generating entities.",
+            "properties":{
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the activity.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"The description of the activity",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "temporal":{
+                    "title":"Temporal Coverage",
+                    "description":"Temporal characteristics of the resource.",
+                    "@id":"http://purl.org/dc/terms/temporal",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/PeriodOfTime"
+                },
+                "spatial":{
+                    "title":"Spatial Coverage",
+                    "description":"Spatial characteristics of the resource.",
+                    "@id":"http://purl.org/dc/terms/spatial",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Location"
+                },
+                "type":{
+                    "title":"Type",
+                    "description":"The nature or genre of the resource.",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "used_entity":{
+                    "title":"Used entity",
+                    "description":"Resource that was used in this activity",
+                    "@id":"http://www.w3.org/ns/prov#used",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/RelatedEntity"
+                    }
+                },
+                "was_associated_with":{
+                    "title":"wasAssociatedWith",
+                    "description":"An activity association is an assignment of responsibility to an agent for an activity, indicating that the agent had a role in the activity.",
+                    "@id":"http://www.w3.org/ns/prov#wasAssociatedWith",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchAgent"
+                    }
+                },
+                "variable":{
+                    "title":"Variable",
+                    "description":"Variable that was affected by the activity",
+                    "@id":"http://rdf-vocabulary.ddialliance.org/discovery#variable",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Variable"
+                    }
+                }
+            }
+        },
+        "CatalogRecord":{
+            "title":"Catalog Record",
+            "@id":"http://www.w3.org/ns/dcat#CatalogRecord",
+            "description":"A record in a data catalog, describing a single dataset.",
+            "properties":{
+                "data_catalog":{
+                    "title":"Research data catalog",
+                    "description":"Research Data Catalog identifier or embedded object to data_catalog property in embedded object.",
+                    "@id":"http://iow.csc.fi/ns/mrd#catalogidentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#anyURI",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "date_created":{
+                    "title":"Date Created",
+                    "description":"Date of creation of the resource.",
+                    "@id":"http://purl.org/dc/terms/created",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "date_modified":{
+                    "title":"Date Modified",
+                    "description":"Date on which the resource was changed.",
+                    "@id":"http://purl.org/dc/terms/modified",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "research_dataset":{
+                    "title":"Research Dataset",
+                    "description":"Dataset described by this metadata record.",
+                    "@id":"http://xmlns.com/foaf/0.1/primaryTopic",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/ResearchDataset"
+                },
+                "contract":{
+                    "title":"Contract",
+                    "description":"Contract identifier or embedded contract object",
+                    "@id":"http://iow.csc.fi/ns/mrd#contractidentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "preservation_state":{
+                    "title":"Preservation state",
+                    "description":"state of dataset in PAS cycle: 0 = Not in PAS, 1 = Proposed for midtterm, 2 = Proposed for long term, 3, =in packaging service, 4 = in dissemination, 5 = in midterm preservation, 6 = in longterm preservation, 7 = Rejected long-term preservation, 8 = Rejected mid-term preservation",
+                    "@id":"http://iow.csc.fi/ns/mrd#passtate",
+                    "enum":[
+                        "0",
+                        "1",
+                        "2",
+                        "3",
+                        "4",
+                        "5",
+                        "6",
+                        "7",
+                        "8"
+                    ],
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "mets_object_identifier":{
+                    "title":"Mets object identifier",
+                    "description":"PID in mid/longterm preservation",
+                    "@id":"http://iow.csc.fi/ns/mrd#metsobjectidentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "preservation_description":{
+                    "title":"Preservation system description",
+                    "description":"Preservation status described for the user",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "preservation_reason_description":{
+                    "title":"Preservation reason description",
+                    "description":"Reason for the preservation from the user",
+                    "@id":"http://iow.csc.fi/ns/mrd#pASuserdescription",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "preservation_state_modified":{
+                    "title":"Preservation status modified",
+                    "description":"Date when status was modified",
+                    "@id":"http://iow.csc.fi/ns/mrd#statusmodified",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "deprecated":{
+                    "title":"Deprecated",
+                    "description":"Catalog record is deprecated because files are removed",
+                    "@id":"http://iow.csc.fi/ns/mrd#readystatus",
+                    "@type":"http://www.w3.org/2001/XMLSchema#boolean",
+                    "maxItems":1,
+                    "type":"boolean"
+                },
+                "alternate_record":{
+                    "title":"Alternate record",
+                    "description":"Refers to alternate catalog record in different catalog. This reference is created if two datasets in different catalogs have the same preferred identifier",
+                    "@id":"http://www.w3.org/ns/prov#alternateOf",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/CatalogRecord"
+                    }
+                },
+                "next":{
+                    "title":"Next version",
+                    "description":"A link to the next version of the catalog record",
+                    "@id":"http://www.w3.org/ns/adms#next",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/CatalogRecord"
+                },
+                "editor":{
+                    "title":"Editor",
+                    "description":"Software or service that is used to modify the catalog record and the dataset",
+                    "@id":"http://iow.csc.fi/ns/mrd#editor",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Editor"
+                }
+            },
+            "required":[
+                "data_catalog",
+                "research_dataset"
+            ]
+        },
+        "Checksum":{
+            "title":"Checksum",
+            "@id":"http://spdx.org/rdf/terms#Checksum",
+            "description":"",
+            "properties":{
+                "algorithm":{
+                    "title":"Algorithm",
+                    "description":"Used checksum algortihm",
+                    "@id":"http://spdx.org/rdf/terms#algorithm",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "checksum_value":{
+                    "title":"Checksum value",
+                    "description":"Value of the checksum. xsd:hexBinary",
+                    "@id":"http://spdx.org/rdf/terms#checksumValue",
+                    "@type":"http://www.w3.org/2001/XMLSchema#hexBinary",
+                    "minItems":1,
+                    "maxItems":1
+                }
+            },
+            "required":[
+                "algorithm",
+                "checksum_value"
+            ]
+        },
+        "Concept":{
+            "title":"Concept",
+            "@id":"http://www.w3.org/2004/02/skos/core#Concept",
+            "description":"An idea or notion; a unit of thought.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"This is the IRI identifier for the concept",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "pref_label":{
+                    "title":"Preferred label",
+                    "description":"The preferred lexical label for a resource, in a given language. A resource has no more than one value of skos:prefLabel per language tag, and no more than one value of skos:prefLabel without language tag. The range of skos:prefLabel is the class of RDF plain literals. skos:prefLabel, skos:altLabel and skos:hiddenLabel are pairwise\n      disjoint properties.",
+                    "@id":"http://www.w3.org/2004/02/skos/core#prefLabel",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "definition":{
+                    "title":"Definition",
+                    "description":"A statement or formal explanation of the meaning of a concept.",
+                    "@id":"http://www.w3.org/2004/02/skos/core#definition",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "in_scheme":{
+                    "title":"Is in scheme",
+                    "description":"Relates a resource (for example a concept) to a concept scheme in which it is included.",
+                    "@id":"http://www.w3.org/2004/02/skos/core#inScheme",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ConceptScheme"
+                    }
+                }
+            },
+            "required":[
+                "identifier"
+            ]
+        },
+        "ConceptScheme":{
+            "title":"Concept Scheme",
+            "@id":"http://www.w3.org/2004/02/skos/core#ConceptScheme",
+            "description":"A set of concepts, optionally including statements about semantic relationships between those concepts.",
+            "properties":{
+                "pref_label":{
+                    "title":"Preferred label",
+                    "description":"The preferred lexical label for a resource, in a given language. A resource has no more than one value of skos:prefLabel per language tag, and no more than one value of skos:prefLabel without language tag. The range of skos:prefLabel is the class of RDF plain literals. skos:prefLabel, skos:altLabel and skos:hiddenLabel are pairwise\n      disjoint properties.",
+                    "@id":"http://www.w3.org/2004/02/skos/core#prefLabel",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"URI of the Concept Scheme",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                }
+            },
+            "required":[
+                "identifier"
+            ]
+        },
+        "Directory":{
+            "title":"Directory in IDA",
+            "@id":"http://www.w3.org/ns/dcat#Distribution",
+            "description":"Directory that links to its contained resources.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Unique identifier for the distribution",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the file.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Free-text account of the file.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "use_category":{
+                    "title":"Use Category",
+                    "description":"Use category from reference data",
+                    "@id":"http://iow.csc.fi/ns/mrd#usetype",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "access_url":{
+                    "title":"Access URL",
+                    "description":"Could be any kind of URL that gives access to a distribution of the dataset. E.g. landing page download, feed URL, SPARQL endpoint. Use when your catalog does not have information on which it is or when it is definitely not a download.",
+                    "@id":"http://www.w3.org/ns/dcat#accessURL",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                }
+            },
+            "required":[
+                "identifier",
+                "title",
+                "use_category"
+            ]
+        },
+        "DistributionCharacteristics":{
+            "title":"File characteristics",
+            "@id":"http://www.loc.gov/premis/rdf/v1#ObjectCharasteristics",
+            "description":"Technical properties of files",
+            "properties":{
+                "title":{
+                    "title":"File Type Name",
+                    "description":"A name of the file type",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "description":{
+                    "title":"File Type Description",
+                    "description":"Description of the file type",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "application_name":{
+                    "title":"Application name",
+                    "description":"A designation for the name of the software program that created the object",
+                    "@id":"http://www.loc.gov/premis/rdf/v1#hasCreatingApplicationName",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "encoding":{
+                    "title":"Text encoding",
+                    "description":"Used text encoding",
+                    "@id":"http://schema.org/encoding",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                }
+            },
+            "required":[
+                "title"
+            ]
+        },
+        "Document":{
+            "title":"Documented link",
+            "@id":"http://xmlns.com/foaf/0.1/Document",
+            "description":"A documented link to a document in the Web.",
+            "properties":{
+                "identifier":{
+                    "title":"URL",
+                    "description":"URL of the homepage",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#anyURI",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the document",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Description of the link. For example to be used as hover text.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                }
+            },
+            "required":[
+                "identifier"
+            ]
+        },
+        "Editor":{
+            "title":"Editor",
+            "@id":"http://iow.csc.fi/ns/mrd#Editor",
+            "description":"Software or service that is used to modify the catalog record and the dataset",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Identifier of the editor, such as Qvain or harvester.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "enum":[
+                        "QVAIN"
+                    ],
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "owner_id":{
+                    "title":"Owner identifier",
+                    "description":"owner of the resource",
+                    "@id":"http://iow.csc.fi/ns/mrd#owner_identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "creator_id":{
+                    "title":"Creator identifier",
+                    "description":"creator of the resource",
+                    "@id":"http://iow.csc.fi/ns/mrd#creator_identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "record_id":{
+                    "title":"Record identifier",
+                    "description":"local record identifier",
+                    "@id":"http://iow.csc.fi/ns/mrd#recordIdentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                }
+            }
+        },
+        "EntityRelation":{
+            "title":"Entity relation",
+            "@id":"http://www.w3.org/ns/prov#EntityInfluence",
+            "description":"Description of a the dataset influence upon any other kind of entity.",
+            "properties":{
+                "entity":{
+                    "title":"Related entity",
+                    "@id":"http://www.w3.org/ns/prov#entity",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/RelatedEntity"
+                },
+                "relation_type":{
+                    "title":"Relation type",
+                    "description":"Role of the influence. This property is considered same as rdf:isSingletonPropertyOf.",
+                    "@id":"http://www.w3.org/ns/prov#hadRole",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            },
+            "required":[
+                "entity",
+                "relation_type"
+            ]
+        },
+        "File":{
+            "title":"File in IDA",
+            "@id":"http://www.w3.org/ns/dcat#Distribution",
+            "description":"File in IDA",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Unique identifier for the distribution",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the file.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Free-text account of the file.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "access_url":{
+                    "title":"Access URL",
+                    "description":"Could be any kind of URL that gives access to a distribution of the dataset. E.g. landing page download, feed URL, SPARQL endpoint. Use when your catalog does not have information on which it is or when it is definitely not a download.",
+                    "@id":"http://www.w3.org/ns/dcat#accessURL",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "file_type":{
+                    "title":"File type",
+                    "description":"File type from reference data",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "use_category":{
+                    "title":"Use category",
+                    "description":"Use type of the resource",
+                    "@id":"http://iow.csc.fi/ns/mrd#usetype",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            },
+            "required":[
+                "identifier",
+                "title",
+                "use_category"
+            ]
+        },
+        "LinguisticSystem":{
+            "title":"Linguistic System",
+            "@id":"http://purl.org/dc/terms/LinguisticSystem",
+            "description":"Examples include written, spoken, sign, and computer languages.\n\nA system of signs, symbols, sounds, gestures, or rules used in communication.",
+            "properties":{
+                "title":{
+                    "title":"Title",
+                    "description":"A name of the Linguistic System. Name is given as localized text from IETF language codes. In case text cannot be localixed \"zxx\" or \"und\" language codes must be used.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Recommended best practice is to identify the resource by means of a string conforming to a formal identification system. \n\nAn unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#anyURI",
+                    "maxItems":1
+                }
+            }
+        },
+        "Location":{
+            "title":"Location",
+            "@id":"http://purl.org/dc/terms/Location",
+            "description":"A spatial region or named place.",
+            "properties":{
+                "geographic_name":{
+                    "title":"Geographic name",
+                    "description":"A geographic name is a proper noun applied to a spatial object. Taking the example used in the relevant INSPIRE data specification (page 18), the following are all valid geographic names for the Greek capital:\n- Αθήνα (the Greek endonym written in the Greek script)\n- Athína (the standard Romanisation of the endonym)\n- Athens (the English language exonym)\nFor INSPIRE-conformant data, provide the metadata for the geographic name using a skos:Concept as a datatype.",
+                    "@id":"http://www.w3.org/ns/locn#geographicName",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "alt":{
+                    "title":"Altitude",
+                    "description":"The WGS84 altitude of a SpatialThing (decimal meters \nabove the local reference ellipsoid).",
+                    "@id":"http://www.w3.org/2003/01/geo/wgs84_pos#alt",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "full_address":{
+                    "title":"Full address",
+                    "description":"The complete address written as a string, with or without formatting.",
+                    "@id":"http://www.w3.org/ns/locn#fullAddress",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "as_wkt":{
+                    "title":"Geometry",
+                    "description":"Supported format for geometry is WKT string in WGS84 coordinate system.",
+                    "@id":"http://www.opengis.net/ont/geosparql#asWKT",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "place_uri":{
+                    "title":"Place uri",
+                    "description":"URI for the place. Use reference data from: https://metax-test.csc.fi/es/reference_data/location/_search?pretty=true",
+                    "@id":"http://purl.org/dc/terms/subject",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            }
+        },
+        "Organization":{
+            "title":"Organization",
+            "@id":"http://xmlns.com/foaf/0.1/Organization",
+            "description":"An organization.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"An unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "maxItems":1
+                },
+                "name":{
+                    "title":"Name",
+                    "description":"This property contains a name of the agent. This property can be repeated for different versions of the name (e.g. the name in different languages)",
+                    "@id":"http://xmlns.com/foaf/0.1/name",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "email":{
+                    "title":"Email",
+                    "description":"Email address.",
+                    "@id":"http://schema.org/email",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "telephone":{
+                    "title":"Phone",
+                    "description":"The telephone number.",
+                    "@id":"http://schema.org/telephone",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "homepage":{
+                    "title":"Homepage",
+                    "@id":"http://xmlns.com/foaf/0.1/homepage",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "is_part_of":{
+                    "title":"Is Part Of",
+                    "description":"A related resource in which the described resource is physically or logically included.",
+                    "@id":"http://purl.org/dc/terms/isPartOf",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Organization"
+                }
+            },
+            "required":[
+                "name"
+            ]
+        },
+        "PeriodOfTime":{
+            "title":"Period of Time",
+            "@id":"http://purl.org/dc/terms/PeriodOfTime",
+            "description":"An interval of time that is named or defined by its start and end dates.",
+            "properties":{
+                "start_date":{
+                    "title":"Start of the pediod",
+                    "@id":"http://schema.org/startDate",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "end_date":{
+                    "title":"End of the period",
+                    "@id":"http://schema.org/endDate",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                }
+            }
+        },
+        "Person":{
+            "title":"Person",
+            "@id":"http://xmlns.com/foaf/0.1/Person",
+            "description":"A person.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"An unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "maxItems":1
+                },
+                "name":{
+                    "title":"Name",
+                    "description":"This property contains a name of the agent. This property can be repeated for different versions of the name (e.g. the name in different languages)",
+                    "@id":"http://xmlns.com/foaf/0.1/name",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "email":{
+                    "title":"Email",
+                    "description":"Email address.",
+                    "@id":"http://schema.org/email",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "telephone":{
+                    "title":"Phone",
+                    "description":"The telephone number.",
+                    "@id":"http://schema.org/telephone",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "homepage":{
+                    "title":"Homepage",
+                    "@id":"http://xmlns.com/foaf/0.1/homepage",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "member_of":{
+                    "title":"Member of",
+                    "description":"Indicates that a person is a member of the Organization with no indication of the nature of that membership or the role played.",
+                    "@id":"http://www.w3.org/ns/org#memberOf",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Organization"
+                },
+                "contributor_role":{
+                    "title":"Contributor role",
+                    "description":"Contributor role from reference data",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            },
+            "required":[
+                "name",
+                "member_of"
+            ]
+        },
+        "Project":{
+            "title":"Project",
+            "@id":"http://xmlns.com/foaf/0.1/Project",
+            "description":"A project (a collective endeavour of some kind).",
+            "properties":{
+                "name":{
+                    "title":"Name",
+                    "description":"Name of the project",
+                    "@id":"http://xmlns.com/foaf/0.1/name",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Recommended best practice is to identify the resource by means of a string conforming to a formal identification system.  An unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "has_funder_identifier":{
+                    "title":"Project funding identifier",
+                    "description":"Unique identifier for the project that is being used by the project funder",
+                    "@id":"http://purl.org/cerif/frapo/hasFunderIdentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "homepage":{
+                    "title":"Homepage",
+                    "@id":"http://xmlns.com/foaf/0.1/homepage",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "has_funding_agency":{
+                    "title":"Funding agency",
+                    "@id":"http://purl.org/cerif/frapo/hasFundingAgency",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Organization"
+                    }
+                },
+                "funder_type":{
+                    "title":"Funder type",
+                    "description":"Project funder type from reference data",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "source_organization":{
+                    "title":"Organization",
+                    "description":"The Organization(s) who is/are participating to the project",
+                    "@id":"http://schema.org/sourceOrganization",
+                    "@type":"@id",
+                    "minItems":1,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Organization"
+                    }
+                }
+            },
+            "required":[
+                "name",
+                "identifier",
+                "source_organization"
+            ]
+        },
+        "RelatedEntity":{
+            "title":"Related Entity",
+            "@id":"http://www.w3.org/ns/prov#Entity",
+            "description":"Related entity",
+            "properties":{
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the resource.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"An account of the resource.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Recommended best practice is to identify the resource by means of a string conforming to a formal identification system.  An unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "maxItems":1
+                },
+                "type":{
+                    "title":"Type",
+                    "description":"Type of the entity, for example: API, Application, News article, paper, post or visualization.",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            },
+            "required":[
+                "title",
+                "description"
+            ]
+        },
+        "ResearchAgent":{
+            "title":"Agent",
+            "@id":"http://xmlns.com/foaf/0.1/Agent",
+            "description":"An agent (eg. person, group, software or physical artifact).",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"An unambiguous reference to the resource within a given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "maxItems":1
+                },
+                "name":{
+                    "title":"Name",
+                    "description":"This property contains a name of the agent. This property can be repeated for different versions of the name (e.g. the name in different languages)",
+                    "@id":"http://xmlns.com/foaf/0.1/name",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "email":{
+                    "title":"Email",
+                    "description":"Email address.",
+                    "@id":"http://schema.org/email",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "telephone":{
+                    "title":"Phone",
+                    "description":"The telephone number.",
+                    "@id":"http://schema.org/telephone",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                }
+            },
+            "required":[
+                "name"
+            ]
+        },
+        "ResearchDataLicenseDocument":{
+            "title":"License Document",
+            "@id":"http://purl.org/dc/terms/LicenseDocument",
+            "description":"A legal document giving official permission to do something with a Resource.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"License identifier from the reference data.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the resource.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Description may include but is not limited to: an abstract, a table of contents, a graphical representation, or a free-text account of the resource. An account of the resource.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "license":{
+                    "title":"Licence URL",
+                    "description":"A referenced license document that applies to this content",
+                    "@id":"http://schema.org/license",
+                    "@type":"http://www.w3.org/2001/XMLSchema#anyURI",
+                    "maxItems":1
+                }
+            },
+            "required":[
+                "identifier"
+            ]
+        },
+        "ResearchDataset":{
+            "title":"Research Dataset",
+            "@id":"http://www.w3.org/ns/dcat#Dataset",
+            "description":"A collection of data, published or curated by a single source, and available for access or download in one or more formats",
+            "properties":{
+                "urn_identifier":{
+                    "title":"Dataset URN identifier",
+                    "description":"Dataset identifier",
+                    "@id":"http://iow.csc.fi/ns/mrd#datasetidentifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "preferred_identifier":{
+                    "title":"Preferred identifier",
+                    "description":"Unique identifier for the dataset. URN or URI.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "minItems":1,
+                    "maxItems":1
+                },
+                "modified":{
+                    "title":"Dataset modification date",
+                    "description":"Last known time when a research dataset or metadata about the research dataset has been significantly modified. This field is usually modified by the user or harvested from other source.",
+                    "@id":"http://purl.org/dc/terms/modified",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "version_info":{
+                    "title":"Version",
+                    "description":"This property contains a version number or other version designation of the Dataset.",
+                    "@id":"http://www.w3.org/2002/07/owl#versionInfo",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "version_notes":{
+                    "title":"Version notes",
+                    "description":"This property contains a description of the differences between this version and a previous version of the Dataset. This property can be repeated for parallel language versions of the version notes.",
+                    "@id":"http://www.w3.org/ns/adms#versionNotes",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "issued":{
+                    "title":"Release date",
+                    "description":"Date of formal issuance (e.g., publication) of the resource.",
+                    "@id":"http://purl.org/dc/terms/issued",
+                    "@type":"http://www.w3.org/2001/XMLSchema#date",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"Textual label which concisely describes the content of the dataset. Based on the title of the dataset, a human should have a general understanding of the topic of the dataset. The title should be unique enough that it is unlikely to be used for another dataset.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "keyword":{
+                    "title":"Keyword",
+                    "description":"A keyword or tag describing the dataset. It is recommended to use a controlled vocabulary, ontology or classification when choosing keywords.",
+                    "@id":"http://www.w3.org/ns/dcat#keyword",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "type":"array",
+                    "items":{
+                        "type":"string"
+                    }
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Free-form description of the dataset",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "bibliographic_citation":{
+                    "title":"Preferred Bibliographic Citation",
+                    "description":"Preferred bibliographic reference for the resource.",
+                    "@id":"http://purl.org/dc/terms/bibliographicCitation",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "other_identifier":{
+                    "title":"Other identifier",
+                    "description":"",
+                    "@id":"http://www.w3.org/ns/adms#identifier",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/StructuredIdentifier"
+                    }
+                },
+                "publisher":{
+                    "title":"Distributor",
+                    "description":"An agent who has permission to distribute the dataset or who has made the dataset available.",
+                    "@id":"http://purl.org/dc/terms/publisher",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/ResearchAgent"
+                },
+                "creator":{
+                    "title":"Creator",
+                    "description":"A person or organisation who originally produced the dataset, the original rights holder",
+                    "@id":"http://purl.org/dc/terms/creator",
+                    "@type":"@id",
+                    "minItems":1,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchAgent"
+                    }
+                },
+                "contributor":{
+                    "title":"Contributor",
+                    "description":"A person or organisation that has contributed significantly in the creation of the dataset",
+                    "@id":"http://purl.org/dc/terms/contributor",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchAgent"
+                    }
+                },
+                "is_output_of":{
+                    "title":"Producer project",
+                    "description":"A project that has caused the dataset to be created",
+                    "@id":"http://purl.org/cerif/frapo/isOutputOf",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Project"
+                    }
+                },
+                "rights_holder":{
+                    "title":"Dataset owner",
+                    "description":"A person or organisation who holds the copyright of the dataset at the current moment, usually the organization of the author – this does not mean the owner of the storage media (such as a memory stick) but the rights holder",
+                    "@id":"http://purl.org/dc/terms/rightsHolder",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/ResearchAgent"
+                },
+                "theme":{
+                    "title":"Theme",
+                    "description":"The main category of the dataset. A dataset can have multiple themes. Themes are concepts which relate to the content of the dataset, describe the dataset or express its topic or meaning.",
+                    "@id":"http://www.w3.org/ns/dcat#theme",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Concept"
+                    }
+                },
+                "language":{
+                    "title":"Language",
+                    "description":"Recommended best practice is to use a controlled vocabulary such as RFC 4646 [RFC4646]. A language of the resource.",
+                    "@id":"http://purl.org/dc/terms/language",
+                    "@type":"@id",
+                    "minItems":0,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/LinguisticSystem"
+                    }
+                },
+                "spatial":{
+                    "title":"Spatial Coverage",
+                    "description":"Spatial characteristics of the resource.",
+                    "@id":"http://purl.org/dc/terms/spatial",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Location"
+                    }
+                },
+                "temporal":{
+                    "title":"Temporal Coverage",
+                    "description":"Temporal characteristics of the resource.",
+                    "@id":"http://purl.org/dc/terms/temporal",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/PeriodOfTime"
+                    }
+                },
+                "relation":{
+                    "title":"Relation",
+                    "description":"A related dataset or other entity",
+                    "@id":"http://purl.org/dc/terms/relation",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/EntityRelation"
+                    }
+                },
+                "field_of_science":{
+                    "title":"Field of science",
+                    "description":"Scientific discipline whose data collection has produced the dataset",
+                    "@id":"http://iow.csc.fi/ns/att#discipline",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Concept"
+                    }
+                },
+                "remote_resources":{
+                    "title":"Remote resources",
+                    "description":"A concrete storage or expression format for the data in the dataset, for example a file, a database or a query interface to the data.",
+                    "@id":"http://www.w3.org/ns/dcat#distribution",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/WebResource"
+                    }
+                },
+                "access_rights":{
+                    "title":"Access rights",
+                    "@id":"http://www.w3.org/ns/dcat#accessRights",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/RightsStatement"
+                },
+                "provenance":{
+                    "title":"Provenance",
+                    "description":"A statement of any changes in ownership and custody of the resource since its creation that are significant for its authenticity, integrity, and interpretation.",
+                    "@id":"http://purl.org/dc/terms/provenance",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Activity"
+                    }
+                },
+                "value":{
+                    "title":"Metadata quality value",
+                    "description":"Metadata quality value calculated in some manner.",
+                    "@id":"http://www.w3.org/ns/dqv#value",
+                    "@type":"http://www.w3.org/2001/XMLSchema#decimal",
+                    "type":"array",
+                    "items":{
+                        "type":"number"
+                    }
+                },
+                "files":{
+                    "title":"List of files",
+                    "description":"Connects a dataset to one or more of files in IDA",
+                    "@id":"http://www.w3.org/ns/dcat#distribution",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/File"
+                    }
+                },
+                "curator":{
+                    "title":"Curator",
+                    "description":"Curator of the dataset",
+                    "@id":"http://iow.csc.fi/ns/mrd#curator",
+                    "@type":"@id",
+                    "minItems":1,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchAgent"
+                    }
+                },
+                "directories":{
+                    "title":"List of directories",
+                    "description":"Connects a dataset to one of its available distributions.",
+                    "@id":"http://www.w3.org/ns/dcat#distribution",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Directory"
+                    }
+                },
+                "infrastructure":{
+                    "title":"Used infrastructure",
+                    "description":"Service or tools that is used to produce the dataset",
+                    "@id":"http://iow.csc.fi/ns/mrd#infrastructure",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/Concept"
+                    }
+                },
+                "total_ida_byte_size":{
+                    "title":"Total ida byte size",
+                    "description":"Sum of all Ida distribution byte size. Read only field.",
+                    "@id":"http://iow.csc.fi/ns/mrd#totalidabytesize",
+                    "@type":"http://www.w3.org/2001/XMLSchema#decimal",
+                    "maxItems":1,
+                    "type":"number"
+                },
+                "total_remote_resources_byte_size":{
+                    "title":"Total remote resources byte size",
+                    "description":"Sum of all remote resources distribution byte size. Read only field.",
+                    "@id":"http://iow.csc.fi/ns/mrd#totalremoteresourcesbytesize",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                }
+            },
+            "required":[
+                "urn_identifier",
+                "preferred_identifier",
+                "title",
+                "description",
+                "creator",
+                "curator"
+            ]
+        },
+        "RightsStatement":{
+            "title":"Rights Statement",
+            "@id":"http://purl.org/dc/terms/RightsStatement",
+            "description":"A statement about the intellectual property rights (IPR) held in or over a Resource, a legal document giving official permission to do something with a resource, or a statement about access rights.",
+            "properties":{
+                "description":{
+                    "title":"Description",
+                    "description":"Free account of the rights",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "available":{
+                    "title":"Date Available",
+                    "description":"Date (often a range) that the resource became or will become available.",
+                    "@id":"http://purl.org/dc/terms/available",
+                    "@type":"http://www.w3.org/2001/XMLSchema#date",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "access_type":{
+                    "title":"Access type",
+                    "description":"The nature or genre of the resource.",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "restriction_grounds":{
+                    "title":"Restriction grounds",
+                    "description":"Classified reason of allocated access type.",
+                    "@id":"http://iow.csc.fi/ns/mrd#restrictiongrounds",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "has_rights_related_agent":{
+                    "title":"Related agent",
+                    "@id":"http://www.loc.gov/premis/rdf/v1#hasRightRelatedAgent",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchAgent"
+                    }
+                },
+                "license":{
+                    "title":"License",
+                    "description":"A legal document giving official permission to do something with the resource.",
+                    "@id":"http://purl.org/dc/terms/license",
+                    "@type":"@id",
+                    "minItems":0,
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchDataLicenseDocument"
+                    }
+                }
+            },
+            "required":[
+                "access_type",
+                "restriction_grounds"
+            ]
+        },
+        "StructuredIdentifier":{
+            "title":"Identifier",
+            "@id":"http://www.w3.org/ns/adms#Identifier",
+            "description":"Structured identifier",
+            "properties":{
+                "notation":{
+                    "title":"Identifier value",
+                    "description":"Literal value of the identifier",
+                    "@id":"http://www.w3.org/2004/02/skos/core#notation",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "local_identifier_type":{
+                    "title":"Local identifier type",
+                    "description":"Local identifier type defines use of the identifier in given context.",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "provider":{
+                    "title":"Provider",
+                    "description":"Provider agency for the identifier",
+                    "@id":"http://purl.org/dc/terms/creator",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Organization"
+                },
+                "type":{
+                    "title":"Type",
+                    "description":"a type of the identifier",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                }
+            },
+            "required":[
+                "notation"
+            ]
+        },
+        "Variable":{
+            "title":"Variable",
+            "@id":"http://rdf-vocabulary.ddialliance.org/discovery#Variable",
+            "description":"",
+            "properties":{
+                "pref_label":{
+                    "title":"Preferred label",
+                    "description":"Preferred label for the variable",
+                    "@id":"http://www.w3.org/2004/02/skos/core#prefLabel",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"object",
+                    "$ref":"#/definitions/langString"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"An account of the resource.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/langString"
+                    }
+                },
+                "concept":{
+                    "title":"Concept",
+                    "description":"Describes the concept of the variable",
+                    "@id":"http://rdf-vocabulary.ddialliance.org/discovery#concept",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "universe":{
+                    "title":"Universe",
+                    "description":"Indicates the Universe(s) of represented variable",
+                    "@id":"http://rdf-vocabulary.ddialliance.org/discovery#universe",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "representation":{
+                    "title":"Representation",
+                    "description":"Defines the possible values of a variable",
+                    "@id":"http://rdf-vocabulary.ddialliance.org/discovery#representation",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/ConceptScheme"
+                }
+            },
+            "required":[
+                "pref_label"
+            ]
+        },
+        "WebResource":{
+            "title":"Remote Web Resource",
+            "@id":"http://www.w3.org/ns/dcat#Distribution",
+            "description":"Represents single available resource in the web.",
+            "properties":{
+                "identifier":{
+                    "title":"Identifier",
+                    "description":"Unique identifier for the distribution from file: scheme",
+                    "@id":"http://purl.org/dc/terms/identifier",
+                    "@type":"@id",
+                    "maxItems":1
+                },
+                "title":{
+                    "title":"Title",
+                    "description":"A name given to the distribution.",
+                    "@id":"http://purl.org/dc/terms/title",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "description":{
+                    "title":"Description",
+                    "description":"Free-text account of the distribution.",
+                    "@id":"http://purl.org/dc/terms/description",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                },
+                "modified":{
+                    "title":"Date Modified",
+                    "description":"Date on which the resource was changed.",
+                    "@id":"http://purl.org/dc/terms/modified",
+                    "@type":"http://www.w3.org/2001/XMLSchema#dateTime",
+                    "minItems":1,
+                    "maxItems":1,
+                    "type":"string",
+                    "format":"date-time"
+                },
+                "byte_size":{
+                    "title":"Byte size",
+                    "description":"The size of a distribution in bytes.",
+                    "@id":"http://www.w3.org/ns/dcat#byteSize",
+                    "@type":"http://www.w3.org/2001/XMLSchema#integer",
+                    "maxItems":1,
+                    "type":"integer"
+                },
+                "access_url":{
+                    "title":"access URL",
+                    "description":"Could be any kind of URL that gives access to a distribution of the dataset. E.g. landing page download, feed URL, SPARQL endpoint. Use when your catalog does not have information on which it is or when it is definitely not a download.",
+                    "@id":"http://www.w3.org/ns/dcat#accessURL",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "download_url":{
+                    "title":"download URL",
+                    "description":"This is a direct link to a downloadable file in a given format. E.g. CSV file or RDF file. The format is described by the distribution's dc:format and/or dcat:mediaType",
+                    "@id":"http://www.w3.org/ns/dcat#downloadURL",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Document"
+                },
+                "checksum":{
+                    "title":"Checksum",
+                    "description":"Checksum of the manifestation",
+                    "@id":"http://spdx.org/rdf/terms#checksum",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Checksum"
+                },
+                "license":{
+                    "title":"License",
+                    "description":"A legal document giving official permission to do something with the resource.",
+                    "@id":"http://purl.org/dc/terms/license",
+                    "@type":"@id",
+                    "type":"array",
+                    "items":{
+                        "type":"object",
+                        "$ref":"#/definitions/ResearchDataLicenseDocument"
+                    }
+                },
+                "file_type":{
+                    "title":"File type",
+                    "description":"File type from reference data",
+                    "@id":"http://purl.org/dc/terms/type",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "resource_type":{
+                    "title":"Resource type",
+                    "description":"type of the resource",
+                    "@id":"http://iow.csc.fi/ns/mrd#resourcetype",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "use_category":{
+                    "title":"Use category",
+                    "description":"Use type of the resource",
+                    "@id":"http://iow.csc.fi/ns/mrd#usetype",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/Concept"
+                },
+                "has_object_characteristics":{
+                    "title":"File charasteristics",
+                    "description":"Fileformat specific charasteristics",
+                    "@id":"http://www.loc.gov/premis/rdf/v1#hasObjectCharacteristics",
+                    "@type":"@id",
+                    "type":"object",
+                    "$ref":"#/definitions/DistributionCharacteristics"
+                },
+                "mediatype":{
+                    "title":"File format",
+                    "description":"Mediatype as text from https://www.iana.org/assignments/media-types/",
+                    "@id":"http://purl.org/dc/terms/format",
+                    "@type":"http://www.w3.org/2001/XMLSchema#string",
+                    "maxItems":1,
+                    "type":"string"
+                }
+            },
+            "required":[
+                "title",
+                "modified",
+                "checksum",
+                "use_category"
+            ]
+        },
+        "langString":{
+            "type":"object",
+            "title":"Multilingual string",
+            "description":"Object type for localized strings",
+            "additionalProperties":{
+                "type":"string"
+            }
+        }
+    }
+}

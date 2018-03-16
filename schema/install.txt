@@ -1,0 +1,37 @@
+
+Postgresql supports encrypted passwords. This is how you create one for a user __USERNAME__ (run on local machine):
+
+$ env DBUSER=__USERNAME__ DBPASS='ASSw0rd' bash -c 'echo -n "${DBPASS}${DBUSER}"' | md5sum | cut -d' ' -f1
+
+
+Now we will su to root, then the postgres user, to add roles and databases.
+
+Become root:
+
+$ su -
+
+Become postgres user:
+
+# su - postgres
+
+Run psql client:
+
+$ psql
+
+The following SQL command creates your role (Postgresql calls users "roles"):
+
+pq# CREATE ROLE __USERNAME__ WITH CREATEDB CREATEROLE LOGIN ENCRYPTED PASSWORD '### HASH GOES HERE ###';
+
+Next, create an ATT role (think of it as a group) and add your superuser to it:
+
+pq# CREATE ROLE att WITH NOLOGIN;
+pq# GRANT att TO __USERNAME__;
+
+Then, create the application role, and add it to the ATT group:
+
+pq# CREATE ROLE qvain WITH LOGIN ENCRYPTED PASSWORD '### HASH GOES HERE ###';
+pq# GRANT qvain TO att;
+
+Finally, create the database:
+
+pq# CREATE DATABASE qvain OWNER qvain;

@@ -1,0 +1,10 @@
+{
+	"open": {},
+	"metax": {
+		"public": [
+			"/metadata",
+			"/contracts",
+			"/files"
+		]
+	}
+}
