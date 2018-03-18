@@ -22,7 +22,7 @@ package main
 import (
 	"testing"
 	
-	"wvh/att/qvain/metax"
+	"github.com/NatLibFi/qvain-api/metax"
 	
 	"encoding/json"
 	//"github.com/mailru/easyjson"

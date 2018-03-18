@@ -7,9 +7,9 @@ import (
 	"time"
 	"net/http"
 	
-	//"wvh/att/qvain/models"
-	"wvh/att/qvain/version"
-	"wvh/att/qvain/jwt"
+	//"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/version"
+	"github.com/NatLibFi/qvain-api/jwt"
 )
 
 const (

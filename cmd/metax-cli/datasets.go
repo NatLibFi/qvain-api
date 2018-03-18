@@ -5,8 +5,8 @@ import (
 	"flag"
 	"time"
 	
-	"wvh/uuid/flag"
-	"wvh/att/qvain/metax"
+	"github.com/wvh/uuid/flag"
+	"github.com/NatLibFi/qvain-api/metax"
 )
 
 

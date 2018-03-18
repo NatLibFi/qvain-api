@@ -2,7 +2,7 @@
 package models
 
 import (
-	"wvh/uuid"
+	"github.com/wvh/uuid"
 )
 
 

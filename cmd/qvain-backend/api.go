@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"encoding/json"
 	
-	"wvh/uuid"
-	"wvh/att/qvain/models"
+	"github.com/wvh/uuid"
+	"github.com/NatLibFi/qvain-api/models"
 	//"encoding/json"
 )
 

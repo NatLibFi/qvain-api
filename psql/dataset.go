@@ -4,10 +4,9 @@ package psql
 import (
 	//"errors"
 
-	"wvh/uuid"
-	"wvh/att/qvain/models"	
+	"github.com/wvh/uuid"
+	"github.com/NatLibFi/qvain-api/models"	
 	"log"
-	//"wvh/uuid/pgx"
 	//"github.com/jackc/pgx"
 )
 

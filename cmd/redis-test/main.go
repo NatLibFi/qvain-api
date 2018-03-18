@@ -4,7 +4,7 @@ package main
 import (
 	"fmt"
 	
-	"wvh/att/qvain/redis"
+	"github.com/NatLibFi/qvain-api/redis"
 	redigo "github.com/garyburd/redigo/redis" // real redis package, for helper functions
 )
 

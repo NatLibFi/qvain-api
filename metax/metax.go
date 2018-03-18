@@ -19,7 +19,7 @@ import (
 	"net/url"
 	"encoding/json"
 	
-	"wvh/att/qvain/version"
+	"github.com/NatLibFi/qvain-api/version"
 )
 
 const (

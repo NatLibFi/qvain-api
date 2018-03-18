@@ -6,9 +6,9 @@ import (
 	"flag"
 	"io/ioutil"
 
-	"wvh/uuid/flag"
-	"wvh/att/qvain/psql"
-	"wvh/att/qvain/models"
+	"github.com/wvh/uuid/flag"
+	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/models"
 )
 
 

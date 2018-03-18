@@ -4,7 +4,7 @@ package main
 import (
 	"fmt"
 	
-	"wvh/att/qvain/psql"
+	"github.com/NatLibFi/qvain-api/psql"
 )
 
 

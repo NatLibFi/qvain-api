@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"text/tabwriter"
 	
-	"wvh/att/qvain/psql"
+	"github.com/NatLibFi/qvain-api/psql"
 )
 
 const ProgramName = "qvain-cli"

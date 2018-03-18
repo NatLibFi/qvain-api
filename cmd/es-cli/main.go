@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"wvh/att/qvain/es"
+	"github.com/NatLibFi/qvain-api/es"
 )
 
 

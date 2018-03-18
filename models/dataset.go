@@ -4,7 +4,7 @@ package models
 import (
 	"time"
 	"errors"
-	"wvh/uuid"
+	"github.com/wvh/uuid"
 )
 
 var (

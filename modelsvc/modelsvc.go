@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	
-	"wvh/att/qvain/models"
+	"github.com/NatLibFi/qvain-api/models"
 )
 
 type ModelSvc map[int]*ModelView

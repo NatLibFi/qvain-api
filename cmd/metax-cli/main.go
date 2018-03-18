@@ -16,7 +16,7 @@ import (
 	"os"
 	"flag"
 	"text/tabwriter"
-	"wvh/att/qvain/version"
+	"github.com/NatLibFi/qvain-api/version"
 )
 
 const ProgramName = "metax-query"
