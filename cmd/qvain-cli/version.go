@@ -10,7 +10,7 @@ import (
 
 func runPgVersion(psql *psql.PsqlService, args []string) error {
 	var version string
-	conn, err := psql.NewConn()
+	conn, err := psql.Connect()
 	if err != nil {
 		panic(err)
 	}

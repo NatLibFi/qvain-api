@@ -123,7 +123,19 @@ func (db *PsqlService) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	
 	for rows.Next() {
 		var dataset models.Dataset
-		err = rows.Scan(dataset.Id, dataset.Creator, dataset.Owner, dataset.family, dataset.schema, dataset.valid)
+		var (
+			family int
+			schema string
+			valid bool
+		)
+		err = rows.Scan(dataset.Id, dataset.Creator, dataset.Owner, family, schema, valid)
+		if err != nil {
+			return nil, err
+		}
+		dataset.SetMetadata(family, schema, "")
+		if err != nil {
+			return nil, err
+		}
 		list = append(list, &dataset)
 	}
 	

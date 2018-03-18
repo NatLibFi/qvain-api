@@ -46,11 +46,11 @@ func runAddRecord(psql *psql.PsqlService, args []string) error {
 		return fmt.Errorf("error: can't read record: %s", err)
 	}
 	
-	record, err := models.NewRecord(creator.Get())
+	record, err := models.NewDataset(creator.Get())
 	if err != nil {
 		return err
 	}
-	record.SetMetadata(schema, string(blob))
+	record.SetMetadata(0, schema, string(blob))
 	fmt.Printf("%+v\n", record)
 	
 	err = psql.Store(record)
