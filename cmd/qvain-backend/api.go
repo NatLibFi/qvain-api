@@ -9,6 +9,7 @@ import (
 	
 	"github.com/wvh/uuid"
 	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/version"
 	//"encoding/json"
 )
 
@@ -272,4 +273,11 @@ func ChangeOwner(id, owner uuid.UUID) error {
 func ViewMetadata(w http.ResponseWriter, r *http.Request, id string) {
 	
 	
+}
+
+
+func apiVersion(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Etag", version.Id+"-"+version.CommitHash)
+	fmt.Fprintf(w, `{"name":"%s","description":"%s","version":"%s","tag":"%s","hash":"%s"}%c`, version.Name, version.Description, version.SemVer, version.CommitTag, version.CommitHash, '\n')
 }

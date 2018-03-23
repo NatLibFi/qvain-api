@@ -21,7 +21,9 @@ build:
 	$(GOBUILD) -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG)"
 
 run:
-	-$(GORUN) -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG)" *.go
+	#-$(GORUN) -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG)" *.go
+	$(GOBUILD) -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG)" && ./qvain-backend
+	rm -f ./qvain-backend
 
 clean:
 	rm -f $(BINARY)
