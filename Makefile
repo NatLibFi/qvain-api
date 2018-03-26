@@ -7,8 +7,11 @@ GO := go
 CMDS := $(notdir $(wildcard cmd/*))
 BINDIR := $(PWD)/bin
 DATADIRS := $(addprefix $(PWD)/,doc bench bin)
-TAG := $(shell git describe --always)
-HASH := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# VCS
+TAG := $(shell git describe --always 2>/dev/null)
+HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
+BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./version)
 
 #IMPORT_PATH := $(shell go list -f '{{.ImportPath}}' .)
@@ -22,7 +25,7 @@ all: listall $(CMDS)
 $(CMDS): $(wildcard cmd/$@/*.go)
 	@echo building: $@
 	@cd cmd/$@; \
-	$(GO) build -o $(BINDIR)/$@ -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG)"
+	$(GO) build -o $(BINDIR)/$@ -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH)"
 
 install: all
 	@echo $(DATADIRS)
