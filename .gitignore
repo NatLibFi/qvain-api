@@ -1,0 +1,7 @@
+# ignore binaries
+/bin/
+
+# ignore swap/tmp files
+*.kate-swp
+*.test
+*.out
