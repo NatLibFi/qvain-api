@@ -107,7 +107,6 @@ func (jh *JwtHandler) TokenError(w http.ResponseWriter, err string, code int) {
 // Header format: "Bearer" 1*SP b64token (https://tools.ietf.org/html/rfc6750#section-2.1)
 func TokenFromHeader(r *http.Request) string {
 	hdr := r.Header.Get("Authorization")
-	log.Println("hdr:", hdr, len(hdr))
 	if len(hdr) > 7 && hdr[0:7] == "Bearer " {
 		return hdr[7:]
 	}
