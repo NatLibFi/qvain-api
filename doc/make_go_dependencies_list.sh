@@ -17,6 +17,8 @@ fi
 
 {
 	cd ${BASEDIR}
+	# base of own import path; find longest common prefix
+	SELF=$(go list ./... | sed -e 'N;s/^\(.*\).*\n\1.*$/\1\n\1/;s,/$,,;D')
 	cat <<-__EOF__
 	# Go package dependencies
 	-------------------------
@@ -25,11 +27,11 @@ fi
 
 	### Imports (directly imported packages)
 	
-	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Imports}}{{.}} {{end}}' ./...) | grep -vE '^wvh/|/internal$' | sort | ${PREFIXCMD} || echo "error generating list")
+	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Imports}}{{.}} {{end}}' ./...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
 
 	### Dependencies (packages required by imported packages)
 	
-	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Deps}}{{.}} {{end}}' ./...) | grep -vE '^wvh/|/internal$' | sort | ${PREFIXCMD} || echo "error generating list")
+	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Deps}}{{.}} {{end}}' ./...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
 
 	-- 
 	generated on $(date "+%Y-%m-%d") at commit $(git describe --always || echo "_unknown_") by ${0##*/}
