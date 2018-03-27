@@ -11,6 +11,8 @@ _links to Qvain related resources_
 
 - Qvain backend:
   - [Github](https://github.com/NatLibFi/qvain-api) repository
+  - [Github issues](https://github.com/NatLibFi/qvain-api/issues) – report bug reports here
+  - [Jira bug tracker](https://jira.eduuni.fi/projects/CSCQVAIN) at CSC – for planning and service integration
   - Documentation:
     - [Rest API](./api.md)
     - [Metax API](./metax_api.md) dependencies
@@ -43,7 +45,7 @@ _links to CSC's MetaX related resources_
 
 ## IOW / Tietomallit
 
-_links to the application profiles_
+_links to metadata schemas_
 
 - [Metax Research Datasets](https://tietomallit.suomi.fi/model/mrd/) – the main metadata schema used in Qvain
 - [Metax Research Datasets (IOW)](http://iow.csc.fi/model/mrd/CatalogRecord/)
