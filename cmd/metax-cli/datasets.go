@@ -1,37 +1,36 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
 	"time"
-	
-	"github.com/wvh/uuid/flag"
-	"github.com/NatLibFi/qvain-api/metax"
-)
 
+	"github.com/NatLibFi/qvain-api/metax"
+	"github.com/wvh/uuid/flag"
+)
 
 func runDatasets(url string, args []string) error {
 	flags := flag.NewFlagSet("datasets", flag.ExitOnError)
 	var (
-		owner   uuidflag.Uuid
+		owner uuidflag.Uuid
 		since string
 		ago   time.Duration
 	)
 	flags.Var(&owner, "owner", "owner `uuid`")
 	flags.StringVar(&since, "since", "", "date in iso-8601 format for Last Modified Since header")
 	flags.DurationVar(&ago, "ago", 0, "duration relative to Now() for Last-Modified-Since header, e.g.: \"2h30m\"")
-	
+
 	flags.Usage = usageFor(flags, "datasets [flags]")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	
+
 	if since != "" && ago != 0 {
 		return fmt.Errorf("arguments `since` and `ago` are mutually exclusive")
 	}
-	
+
 	var sinceHeader time.Time
-	
+
 	if since != "" {
 		sinceTime, err := time.Parse(time.RFC3339, since)
 		if err != nil {
@@ -39,19 +38,19 @@ func runDatasets(url string, args []string) error {
 		}
 		sinceHeader = sinceTime
 	}
-	
+
 	if ago != 0 {
 		sinceHeader = time.Now().Add(-ago)
 	}
-	
+
 	if !sinceHeader.IsZero() {
 		fmt.Println("Last-Modified-Since:", sinceHeader)
 	}
-	
+
 	if owner.IsSet() {
 		fmt.Println("User:", owner)
 	}
-	
+
 	fmt.Println("querying metax datasets endpoint")
 	svc := metax.NewMetaxService(METAX_HOST)
 	// 053bffbcc41edad4853bea91fc42ea18
@@ -72,15 +71,15 @@ func runDatasets(url string, args []string) error {
 			}
 		}
 	}
-	
+
 	streamResponse, err := svc.ReadStream(metax.WithOwner(owner.String()))
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Println("stream response:", len(streamResponse))
 	for i, dataset := range streamResponse {
- 		fmt.Printf("%05d:\n", i+1)
+		fmt.Printf("%05d:\n", i+1)
 		fmt.Println("  id:", dataset.Id)
 		if dataset.Editor != nil {
 			fmt.Println("  owner:", *dataset.Editor.OwnerId)
@@ -88,7 +87,6 @@ func runDatasets(url string, args []string) error {
 			fmt.Println("  identifier:", *dataset.Editor.Identifier)
 		}
 	}
-	
-	
+
 	return nil
 }

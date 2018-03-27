@@ -1,16 +1,15 @@
 package main
 
 import (
-	"log"
-	"strings"
 	"errors"
-	"time"
+	"log"
 	"net/http"
-	
+	"strings"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/patrickmn/go-cache"
 )
-
 
 const BEARER_PREFIX = "Bearer "
 
@@ -24,8 +23,8 @@ var OpenCache = cache.New(30*time.Second, 1*time.Minute)
 func init() {
 }
 
-
 var upgrader = websocket.Upgrader{}
+
 /*
 {
 	CheckOrigin: func(r *http.Request) bool {
@@ -56,19 +55,18 @@ func parseToken(token string) (string, error) {
 	return "wouter", nil
 }
 
-
 func echo(w http.ResponseWriter, r *http.Request) {
 	log.Println("Origin:", r.Header.Get("Origin"), r.Host)
 	log.Println("Subprotocols:", websocket.Subprotocols(r))
 	_ = strings.HasPrefix("lwkejr", "lw")
-	
+
 	var user string
 	var haveToken bool
 	for _, proto := range websocket.Subprotocols(r) {
 		if !strings.HasPrefix(proto, BEARER_PREFIX) {
 			continue
 		}
-		
+
 		token, err := parseToken(proto[len(BEARER_PREFIX):])
 		if err != nil {
 			//http.Error(w, errInvalidToken.Error(), http.StatusForbidden)
@@ -86,7 +84,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 		//http.Error(w, errInvalidToken.Error(), http.StatusUnauthorized)
 		//return
 	}
-	
+
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("upgrade:", err)
@@ -100,16 +98,16 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		log.Printf("recv: %s", message)
-		
+
 		if strings.HasPrefix(string(message), "open:") {
 			log.Printf("opening...")
-			
+
 			/*
-			err := OpenCache.Add(string(message[5:]), "uid", cache.DefaultExpiration)
-			if err != nil {
-				log.Printf("already open")
-				message = []byte("error: already open")
-			}
+				err := OpenCache.Add(string(message[5:]), "uid", cache.DefaultExpiration)
+				if err != nil {
+					log.Printf("already open")
+					message = []byte("error: already open")
+				}
 			*/
 			if val, e := OpenCache.Get(string(message[5:])); e {
 				log.Printf("already open")
@@ -122,7 +120,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		
+
 		err = c.WriteMessage(mt, message)
 		if err != nil {
 			log.Println("write:", err)

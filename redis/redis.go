@@ -2,8 +2,8 @@
 package redis
 
 import (
-	"time"
 	"github.com/garyburd/redigo/redis"
+	"time"
 )
 
 type RedisPool struct {
@@ -12,21 +12,21 @@ type RedisPool struct {
 
 func NewRedisPool(net, address string) *RedisPool {
 	/*
-	func newPool(addr string) *redis.Pool {
-		return &redis.Pool{
-			MaxIdle: 3,
-			IdleTimeout: 10 * time.Second,
-			//Dial: func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
-			Dial: func() (redis.Conn, error) { return redis.Dial(net, address) },
+		func newPool(addr string) *redis.Pool {
+			return &redis.Pool{
+				MaxIdle: 3,
+				IdleTimeout: 10 * time.Second,
+				//Dial: func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+				Dial: func() (redis.Conn, error) { return redis.Dial(net, address) },
+			}
 		}
-	}
 	*/
 
 	return &RedisPool{
 		&redis.Pool{
-			MaxIdle: 3,
+			MaxIdle:     3,
 			IdleTimeout: 10 * time.Second,
-			Dial: func() (redis.Conn, error) { return redis.Dial(net, address) },
+			Dial:        func() (redis.Conn, error) { return redis.Dial(net, address) },
 		},
 	}
 }

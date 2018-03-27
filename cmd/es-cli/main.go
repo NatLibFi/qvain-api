@@ -11,7 +11,6 @@ import (
 	"github.com/NatLibFi/qvain-api/es"
 )
 
-
 func main() {
 	//fmt.Println("elastic search query tool")
 	esClient := es.NewClient("https://metax-test.csc.fi/es/")

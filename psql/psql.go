@@ -5,13 +5,11 @@ import (
 	"github.com/jackc/pgx"
 )
 
-
 type PsqlService struct {
-	config       *pgx.ConnConfig
+	config *pgx.ConnConfig
 	//poolConfig *pgx.ConnPoolConfig
-	pool         *pgx.ConnPool
+	pool *pgx.ConnPool
 }
-
 
 // NewService returns a database handle with the requested configuration.
 // It does not try to connect.
@@ -23,18 +21,16 @@ func NewService(connString string) (*PsqlService, error) {
 	return &PsqlService{config: &connConfig}, nil
 }
 
-
 // NewPoolService calls NewService and initialises the connection pool.
 func NewPoolService(connString string) (db *PsqlService, err error) {
 	db, err = NewService(connString)
 	if err != nil {
 		return
 	}
-	
+
 	err = db.InitPool()
 	return
 }
-
 
 func NewPoolServiceFromEnv() (db *PsqlService, err error) {
 	connConfig, err := pgx.ParseEnvLibpq()
@@ -42,17 +38,15 @@ func NewPoolServiceFromEnv() (db *PsqlService, err error) {
 		return nil, err
 	}
 	db = &PsqlService{config: &connConfig}
-	
+
 	err = db.InitPool()
 	return
 }
-
 
 // Connect returns a single database conn or an error.
 func (psql *PsqlService) Connect() (*pgx.Conn, error) {
 	return pgx.Connect(*psql.config)
 }
-
 
 // MustConnect returns a single database conn and panics on failure.
 func (psql *PsqlService) MustConnect() *pgx.Conn {
@@ -62,7 +56,6 @@ func (psql *PsqlService) MustConnect() *pgx.Conn {
 	}
 	return conn
 }
-
 
 // InitPool initialises a pool with default settings on the database object.
 func (psql *PsqlService) InitPool() (err error) {
@@ -75,11 +68,9 @@ func (psql *PsqlService) InitPool() (err error) {
 	return err
 }
 
-
 type Tx struct {
 	*pgx.Tx
 }
-
 
 func (psql *PsqlService) Begin() (*Tx, error) {
 	tx, err := psql.pool.Begin()
@@ -89,10 +80,9 @@ func (psql *PsqlService) Begin() (*Tx, error) {
 	return &Tx{tx}, nil
 }
 
-
 func (psql *PsqlService) Version() (string, error) {
 	var version string
-	
+
 	err := psql.pool.QueryRow("select version()").Scan(&version)
 	return version, err
 }

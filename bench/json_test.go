@@ -1,4 +1,3 @@
-
 package main
 
 // ~/.local/gobin/easyjson -all -no_std_marshalers ../metax/metax.go
@@ -21,13 +20,13 @@ package main
 
 import (
 	"testing"
-	
+
 	"github.com/NatLibFi/qvain-api/metax"
-	
+
 	"encoding/json"
 	//"github.com/mailru/easyjson"
-	"github.com/pquerna/ffjson/ffjson"
 	"github.com/json-iterator/go"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 var jsonRecord string = `{
@@ -43,7 +42,6 @@ var jsonRecord string = `{
 	"created_by_api":"2017-05-23T13:07:22.559656"
 }`
 
-
 func BenchmarkJson(b *testing.B) {
 	rec := new(metax.MetaxRecord)
 	for i := 0; i < b.N; i++ {
@@ -56,7 +54,7 @@ func BenchmarkJson(b *testing.B) {
 
 func BenchmarkJsonRoot(b *testing.B) {
 	var top map[string]interface{}
-	
+
 	for i := 0; i < b.N; i++ {
 		err := json.Unmarshal([]byte(jsonRecord), &top)
 		if err != nil {
@@ -64,7 +62,6 @@ func BenchmarkJsonRoot(b *testing.B) {
 		}
 	}
 }
-
 
 func BenchmarkFfjson(b *testing.B) {
 	rec := new(metax.MetaxRecord)
@@ -78,7 +75,7 @@ func BenchmarkFfjson(b *testing.B) {
 
 func BenchmarkFfjsonRoot(b *testing.B) {
 	var top map[string]interface{}
-	
+
 	for i := 0; i < b.N; i++ {
 		err := ffjson.Unmarshal([]byte(jsonRecord), &top)
 		if err != nil {
@@ -97,7 +94,6 @@ func BenchmarkFfjson2(b *testing.B) {
 	}
 }
 
-
 func BenchmarkEasyJson(b *testing.B) {
 	rec := new(metax.MetaxRecord)
 	for i := 0; i < b.N; i++ {
@@ -112,7 +108,7 @@ func BenchmarkEasyJson(b *testing.B) {
 /*
 func BenchmarkEasyJsonRoot(b *testing.B) {
 	var top map[string]interface{}
-	
+
 	for i := 0; i < b.N; i++ {
 		err := top.Unmarshal([]byte(jsonRecord))
 		if err != nil {
@@ -121,7 +117,6 @@ func BenchmarkEasyJsonRoot(b *testing.B) {
 	}
 }
 */
-
 
 func BenchmarkJsoniter(b *testing.B) {
 	rec := new(metax.MetaxRecord)
@@ -135,7 +130,7 @@ func BenchmarkJsoniter(b *testing.B) {
 
 func BenchmarkJsoniterRoot(b *testing.B) {
 	var top map[string]interface{}
-	
+
 	for i := 0; i < b.N; i++ {
 		err := jsoniter.ConfigCompatibleWithStandardLibrary.Unmarshal([]byte(jsonRecord), &top)
 		if err != nil {

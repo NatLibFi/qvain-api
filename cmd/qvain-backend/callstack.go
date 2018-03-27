@@ -1,4 +1,3 @@
-
 package main
 
 import (
@@ -7,8 +6,7 @@ import (
 	"strconv"
 )
 
-
-func createStackInfoFunc(depth int, shorten bool) (func() string) {
+func createStackInfoFunc(depth int, shorten bool) func() string {
 	return func() string {
 		_, file, line, ok := runtime.Caller(depth)
 		if !ok {
@@ -29,19 +27,19 @@ func createStackInfoFunc(depth int, shorten bool) (func() string) {
 	}
 }
 
-func createStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) (func() string) {
+func createStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) func() string {
 	return func() string {
 		pc, file, line, ok := runtime.Caller(depth)
 		if !ok {
 			return "???"
 		}
-		
+
 		var fn *runtime.Func
 		if withFn {
 			// fn also contains a FileLine() method returning (file string, line int)
 			fn = runtime.FuncForPC(pc)
 		}
-		
+
 		if shorten {
 			short := file
 			for i := len(file) - 1; i > 0; i-- {
@@ -52,14 +50,13 @@ func createStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) (func
 			}
 			file = short
 		}
-		
+
 		if fn != nil {
 			return fmt.Sprintf("%s:%d(%s)", file, line, fn.Name())
 		}
 		return fmt.Sprintf("%s:%d", file, line)
 	}
 }
-
 
 func getStackInfo(depth int) string {
 	_, file, line, ok := runtime.Caller(depth)

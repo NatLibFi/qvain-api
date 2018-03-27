@@ -48,11 +48,10 @@ type capsV3 struct {
 // linux/capability.h
 const CAP_NET_BIND_SERVICE = 10
 
-
 func callCapGet() (caps *capData, err error) {
 	hdr := new(capHeader)
 	data := (*capData)(nil)
-	
+
 	// get version
 	_, _, errptr := syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(hdr)), uintptr(unsafe.Pointer(data)), 0)
 	if errptr != 0 {
@@ -60,37 +59,35 @@ func callCapGet() (caps *capData, err error) {
 	}
 
 	switch hdr.version {
-		case linuxCapVer1:
-			c := new(capsV1)
-			c.hdr.version = hdr.version
-			_, _, errptr = syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(&c.hdr)), uintptr(unsafe.Pointer(&c.data)), 0)
-			caps = &c.data
-		case linuxCapVer2, linuxCapVer3:
-			c := new(capsV3)
-			c.hdr.version = hdr.version
-			_, _, errptr = syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(&c.hdr)), uintptr(unsafe.Pointer(&c.data[0])), 0)
-			caps = &c.data[0]
-		default:
-			return nil, errUnknownVersion
+	case linuxCapVer1:
+		c := new(capsV1)
+		c.hdr.version = hdr.version
+		_, _, errptr = syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(&c.hdr)), uintptr(unsafe.Pointer(&c.data)), 0)
+		caps = &c.data
+	case linuxCapVer2, linuxCapVer3:
+		c := new(capsV3)
+		c.hdr.version = hdr.version
+		_, _, errptr = syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(&c.hdr)), uintptr(unsafe.Pointer(&c.data[0])), 0)
+		caps = &c.data[0]
+	default:
+		return nil, errUnknownVersion
 	}
-	
+
 	if errptr != 0 {
 		return nil, errptr
 	}
-	
+
 	return
 }
-
 
 func canNetBindService() (bool, error) {
 	caps, err := callCapGet()
 	if err != nil {
 		return false, err
 	}
-	
+
 	return caps.effective&(1<<CAP_NET_BIND_SERVICE) != 0, nil
 }
-
 
 func getOpenFDs() (int, error) {
 	f, err := os.Open("/proc/self/fd")
@@ -104,7 +101,6 @@ func getOpenFDs() (int, error) {
 	}
 	return len(list), nil
 }
-
 
 func getRlimit() {
 	var limit syscall.Rlimit

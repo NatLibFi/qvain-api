@@ -1,12 +1,10 @@
-
 package main
 
 import (
 	"fmt"
-	
+
 	"github.com/NatLibFi/qvain-api/psql"
 )
-
 
 func runPgVersion(psql *psql.PsqlService, args []string) error {
 	var version string

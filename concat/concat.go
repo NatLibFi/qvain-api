@@ -17,7 +17,7 @@ examples:
 
 	// concat files:
 	err := Concat("concat.txt", "part[0-9].txt", nil)
-	
+
 	// concat files, wrapping them in a json object with the filename as key:
 	if err := Concat("big.json", "json[0-9].json", JsonObjectWrapper); err != nil {
 		log.Fatal(err)
@@ -32,17 +32,17 @@ package concat
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
 const (
 	// Use system temp directory or current working directory for temp files
 	UseTemp = true
-	
+
 	// Error or skip on non-fatal errors
 	SkipOnError = false
 )
@@ -55,20 +55,19 @@ func Copy(in, out string) error {
 		return err
 	}
 	defer r.Close()
-	
+
 	w, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666) // or 0640
 	if err != nil {
 		return err
 	}
 	defer w.Close()
-	
+
 	if _, err := io.Copy(w, r); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
-
 
 // Options struct specifies optional arguments to the Concat function for defining separating text.
 type Options struct {
@@ -77,18 +76,17 @@ type Options struct {
 	beforeEach string
 	afterEach  string
 	skipLast   bool
-	
+
 	beforeEachFunc func(fn string) string
 }
 
-
 // JsonObjectWrapper is an Options struct predefined for concatenating Json files into a new object with the filename as key.
 var JsonObjectWrapper = &Options{
-	atStart:        "{\n",
-	atEnd:          "}\n",
-	afterEach:      ",\n",
-	skipLast:       true,
-	
+	atStart:   "{\n",
+	atEnd:     "}\n",
+	afterEach: ",\n",
+	skipLast:  true,
+
 	beforeEachFunc: func(fn string) string {
 		fmt.Println("beforeEachFunc:", fn)
 		return `"` + strings.TrimSuffix(filepath.Base(fn), filepath.Ext(fn)) + `":`
@@ -106,42 +104,41 @@ var JsonArrayWrapper = &Options{
 // Concat concatenates files into a new, large file. It takes an Options struct to define separators between concatenated files.
 func Concat(outname, glob string, options *Options) error {
 	var written int64
-	
+
 	// get a default options struct if we weren't give one
 	if options == nil {
 		options = new(Options)
 	}
-	
+
 	matches, err := filepath.Glob(glob)
 	if err != nil {
 		return err
 	}
-	
+
 	if len(matches) <= 0 {
 		return fmt.Errorf("no matches for glob pattern")
 	}
-	
+
 	var outdir string
 	if !UseTemp {
 		// make temp file in same dir as source file
 		outdir = filepath.Dir(outname)
 	}
-	
+
 	tmpfile, err := ioutil.TempFile(outdir, outname)
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tmpfile.Name())
-	
+
 	fmt.Println("tmpfile:", tmpfile.Name())
-	
+
 	if options.atStart != "" {
 		if _, err := tmpfile.Write([]byte(options.atStart)); err != nil {
 			return err
 		}
 	}
-	
-	
+
 	for i, match := range matches {
 		r, err := os.Open(match)
 		if err != nil {
@@ -149,7 +146,7 @@ func Concat(outname, glob string, options *Options) error {
 		}
 		// don't use defer in loop
 		//defer r.Close()
-		
+
 		if options.beforeEach != "" {
 			if _, err := tmpfile.Write([]byte(options.beforeEach)); err != nil {
 				return err
@@ -160,7 +157,7 @@ func Concat(outname, glob string, options *Options) error {
 				return err
 			}
 		}
-		
+
 		if n, err := io.Copy(tmpfile, r); err != nil {
 			r.Close()
 			return err
@@ -168,37 +165,36 @@ func Concat(outname, glob string, options *Options) error {
 			written += n
 		}
 		r.Close()
-		
-		if options.afterEach != "" && !(options.skipLast && i == len(matches) - 1) {
+
+		if options.afterEach != "" && !(options.skipLast && i == len(matches)-1) {
 			if _, err := tmpfile.Write([]byte(options.afterEach)); err != nil {
 				return err
 			}
 		}
 	}
-	
+
 	if options.atEnd != "" {
 		if _, err := tmpfile.Write([]byte(options.atEnd)); err != nil {
 			return err
 		}
 	}
-	
+
 	if err := tmpfile.Close(); err != nil {
 		return err
 	}
-	
+
 	fmt.Println("written:", written)
-	
+
 	// try link
 	if err := os.Rename(tmpfile.Name(), outname); err == nil {
 		return nil
 	} else {
 		//warn("move failed, trying copy")
 	}
-	
+
 	// move failed (across partitions?), try copy
 	return Copy(tmpfile.Name(), outname)
 }
-
 
 func readDir(dirname string) ([]os.FileInfo, error) {
 	dir, err := os.Open(dirname)
@@ -213,7 +209,6 @@ func readDir(dirname string) ([]os.FileInfo, error) {
 	return list, nil
 }
 
-
 // IsOlderThanGlob checks if a given file is older than the files matching the glob pattern.
 // If the file doesn't exist, this function returns true.
 func IsOlderThanGlob(bundlename, glob string) (bool, error) {
@@ -225,18 +220,18 @@ func IsOlderThanGlob(bundlename, glob string) (bool, error) {
 		}
 		return false, err
 	}
-	
+
 	updated := bundleInfo.ModTime()
-	
+
 	matches, err := filepath.Glob(glob)
 	if err != nil {
 		return false, err
 	}
-	
+
 	if len(matches) <= 0 && !SkipOnError {
 		return false, fmt.Errorf("no matches for glob pattern")
 	}
-	
+
 	for _, match := range matches {
 		fi, err := os.Stat(match)
 		if err != nil {
@@ -263,14 +258,14 @@ func IsOlderThanDirectory(bundlename, dirname string) (bool, error) {
 		}
 		return false, err
 	}
-	
+
 	updated := bundleInfo.ModTime()
-	
+
 	filesInfo, err := readDir(dirname)
 	if err != nil {
 		return false, err
 	}
-	
+
 	for _, fi := range filesInfo {
 		if fi.ModTime().After(updated) {
 			return true, nil

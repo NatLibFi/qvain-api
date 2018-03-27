@@ -2,17 +2,16 @@
 package main
 
 import (
-	"fmt"
-	"os"
 	"flag"
+	"fmt"
 	"io/ioutil"
+	"os"
 	"text/tabwriter"
-	
+
 	"github.com/NatLibFi/qvain-api/psql"
 )
 
 const ProgramName = "qvain-cli"
-
 
 func insertFromFile(fn string) {
 	blob, err := ioutil.ReadFile(fn)
@@ -21,7 +20,6 @@ func insertFromFile(fn string) {
 	}
 	fmt.Printf("File contents: %s", blob)
 }
-
 
 func goUsageFor(flags *flag.FlagSet, short string) func() {
 	return func() {
@@ -33,7 +31,6 @@ func goUsageFor(flags *flag.FlagSet, short string) func() {
 		fmt.Fprintf(os.Stderr, "\n")
 	}
 }
-
 
 func usageFor(flags *flag.FlagSet, short string) func() {
 	return func() {
@@ -58,7 +55,6 @@ func usageFor(flags *flag.FlagSet, short string) func() {
 	}
 }
 
-
 func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "  add         add record")
@@ -68,10 +64,9 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 }
 
-
 func main() {
 	fmt.Println("psql tester")
-	
+
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s <sub-command> [flags]\n", os.Args[0])
 		usage()
@@ -90,26 +85,26 @@ func main() {
 		usage()
 		os.Exit(1)
 	}
-	
+
 	pg, err := psql.NewService("user=qvain password=" + os.Getenv("PGPASS") + " host=/home/wouter/.s.PGSQL.5432 dbname=qvain sslmode=disable")
 	if err != nil {
 		panic(err)
 	}
-	
+
 	//err = pg.InitPool()
 	//if err != nil {
 	//	panic(err)
 	//}
-	
+
 	/*
-	conn, err := pg.NewConn()
-	if err != nil {
-		//panic(err)
-		fmt.Fprintln(os.Stderr, "can't connect to database:", err)
-	}
-	//defer conn.Close()
+		conn, err := pg.NewConn()
+		if err != nil {
+			//panic(err)
+			fmt.Fprintln(os.Stderr, "can't connect to database:", err)
+		}
+		//defer conn.Close()
 	*/
-	
+
 	if err := run(pg, os.Args[2:]); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)

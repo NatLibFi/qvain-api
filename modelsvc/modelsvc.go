@@ -7,15 +7,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	
+
 	"github.com/NatLibFi/qvain-api/models"
 )
 
 type ModelSvc map[int]*ModelView
 
-NewFromFile(fn string) (*ModelSvc, error) {
+func NewFromFile(fn string) (*ModelSvc, error) {
 	svc := make(ModelSvc)
-	
+
 	fh := os.Open(fn)
 	defer fh.Close()
 	if err != nil {

@@ -6,22 +6,22 @@ package version
 var (
 
 	// ident for internal use
-	Id           = "qvain"
+	Id = "qvain"
 
 	// program name for end user
-	Name         = "Qvain"
+	Name = "Qvain"
 
 	// program description
-	Description  = "Qvain API"
+	Description = "Qvain API"
 
 	// semver string – set this manually
-	SemVer       = "0.0.1"
+	SemVer = "0.0.1"
 
 	// nearest commit tag – set by linker
-	CommitTag    = "v???"
+	CommitTag = "v???"
 
 	// exact commit hash – set by linker
-	CommitHash   = "(unknown)"
+	CommitHash = "(unknown)"
 
 	// branch – set by linker
 	CommitBranch = "master"
