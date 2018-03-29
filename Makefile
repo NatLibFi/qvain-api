@@ -59,7 +59,7 @@ doc: doc/go_dependencies.md
 	@cd doc && ./make_go_dependencies_list.sh
 
 $(SOURCELINK):
-	-go get -v wvh/sourcelink
+	-go get -v github.com/wvh/sourcelink
 
 prebuild: $(SOURCELINK)
 	@$(eval REPOLINK=$(shell test -x ${GOBIN}/sourcelink && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo ""))
