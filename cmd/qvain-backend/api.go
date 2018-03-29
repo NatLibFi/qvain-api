@@ -263,5 +263,5 @@ func ViewMetadata(w http.ResponseWriter, r *http.Request, id string) {
 func apiVersion(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", `"`+version.CommitHash+`"`)
-	fmt.Fprintf(w, `{"name":"%s","description":"%s","version":"%s","tag":"%s","hash":"%s"}%c`, version.Name, version.Description, version.SemVer, version.CommitTag, version.CommitHash, '\n')
+	fmt.Fprintf(w, `{"name":"%s","description":"%s","version":"%s","tag":"%s","hash":"%s","repo":"%s"}%c`, version.Name, version.Description, version.SemVer, version.CommitTag, version.CommitHash, version.CommitRepo, '\n')
 }

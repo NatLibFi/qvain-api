@@ -18,11 +18,14 @@ var (
 	SemVer = "0.0.1"
 
 	// nearest commit tag – set by linker
-	CommitTag = "v???"
+	CommitTag = ""
 
 	// exact commit hash – set by linker
 	CommitHash = "(unknown)"
 
 	// branch – set by linker
 	CommitBranch = "master"
+
+	// repo –  set by linker
+	CommitRepo = ""
 )
