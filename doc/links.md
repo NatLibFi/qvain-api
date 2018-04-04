@@ -32,15 +32,18 @@ _links to CSC's MetaX related resources_
   - [Development](https://wiki.eduuni.fi/display/CSCMETAX/Development)
   - [Rest API](https://wiki.eduuni.fi/display/CSCMETAX/REST)
   - [Database](https://wiki.eduuni.fi/display/CSCMETAX/Database+documentation)
+  - [Reference data](https://wiki.eduuni.fi/display/CSCMETAX/Reference+Data)
 - Flowdock: [development](https://www.flowdock.com/app/tiptop/metax-kehitys) and [general](https://www.flowdock.com/app/tiptop/metax) chat
-- Metax API (test instance)
+- Metax API (test instance):
   - [rest api](https://metax-test.csc.fi/rest/)
   - [dataset api](https://metax-test.csc.fi/rest/datasets/)
   - [dataset stream](https://metax-test.csc.fi/rest/datasets/?no_pagination=true&owner_id=055ea531a6cac569425bed94459266ee&stream=true)
   - [file api, directories](https://metax-test.csc.fi/rest/directories/2)
   - [file api, files](https://metax-test.csc.fi/rest/files/)
   - [file api, path](https://metax-test.csc.fi/rest/directories/files?project=project_x&path=/project_x_FROZEN/Experiment_X&include_parent)
-- [Reference data](https://wiki.eduuni.fi/display/CSCMETAX/Reference+Data), metadata fields with enumerated values
+- Metadata schemas:
+  - [base](https://github.com/CSCfi/metax-api/tree/test/src/metax_api/api/rest/base/schemas)
+  - [api](https://github.com/CSCfi/metax-api/tree/test/src/metax_api/api/rest/base/api_schemas)
 
 
 ## IOW / Tietomallit
