@@ -24,7 +24,7 @@ _links to Qvain related resources_
 
 ## Metax
 
-_links to CSC's MetaX related resources_
+_links to CSC's Metax related resources_
 
 - [Github repository](https://github.com/CSCfi/metax-api)
 - [Jira bug tracker](https://jira.eduuni.fi/projects/CSCMETAX)
@@ -57,3 +57,10 @@ _links to metadata schemas_
 - [Metax Data Storage Metadata](http://iow.csc.fi/model/mfs/)
 - [Metax Statistics](http://iow.csc.fi/model/mstat/)
 - [Etsin tietomalli (fi)](http://iow.csc.fi/model/etsin/)
+
+
+## FairData AAI
+
+_links to FairData ID service_
+
+- [Jira planning and status](https://jira.eduuni.fi/projects/CSCFAIRDATAAAI)
