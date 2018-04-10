@@ -69,3 +69,4 @@ _links to FairData ID service_
 
 ## Other
 - [Integration tests](https://github.com/CSCfi/FAIRDATAintegrationtest) for FairData services
+- [Tutkimus-PAS architectural overview](https://wiki.eduuni.fi/display/att/Tutkimus-PAS+arkkitehtuurikuvauksia)
