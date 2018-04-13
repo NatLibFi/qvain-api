@@ -1,7 +1,8 @@
 #
 # -wvh- Makefile to build Go binaries for commands in cmd/*
 #
-#       The only thing this Makfile does as opposed to an ordinary `go build ./...`
+#       The only thing this Makefile does as opposed to an ordinary `go build ./...` is to link in version info.
+#
 
 GO := go
 CMDS := $(notdir $(wildcard cmd/*))
@@ -17,6 +18,9 @@ REPO := $(shell git ls-remote --get-url 2>/dev/null)
 #REPOLINK := $(shell test -x $(SOURCELINK) && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo)
 VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./version)
 
+# collect VCS info for linker
+LDFLAGS := "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH) -X $(VERSION_PACKAGE).CommitRepo=$(REPOLINK)"
+
 #IMPORT_PATH := $(shell go list -f '{{.ImportPath}}' .)
 #BINARY := $(notdir $(IMPORT_PATH))
 
@@ -28,9 +32,11 @@ all: listall $(CMDS)
 $(CMDS): prebuild $(wildcard cmd/$@/*.go)
 	@echo building: $@
 	@cd cmd/$@; \
-	$(GO) build -o $(BINDIR)/$@ -ldflags "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH) -X $(VERSION_PACKAGE).CommitRepo=$(REPOLINK)"
+	$(GO) build -o $(BINDIR)/$@ -ldflags $(LDFLAGS)
 
-install: all
+# this doesn't actually use make but relies on the build cache in Go 1.10 to build only those files that have changed
+install: listall
+	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) ./...
 	@echo $(DATADIRS)
 
 # hack to run command from make command line goal arguments
