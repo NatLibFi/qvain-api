@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/NatLibFi/qvain-api/caller"
 	"github.com/rs/zerolog"
 )
 
@@ -12,7 +13,7 @@ type LocationHook struct {
 }
 
 func NewLocationHook(name string) *LocationHook {
-	return &LocationHook{name: name, stackInfoFunc: createStackInfoFunc(4, true)}
+	return &LocationHook{name: name, stackInfoFunc: caller.CreateStackInfoFunc(4, true)}
 }
 
 func (h LocationHook) Run(e *zerolog.Event, l zerolog.Level, msg string) {
@@ -25,11 +26,9 @@ func createAppLogger(isDebugging bool) (logger zerolog.Logger) {
 	if isDebugging {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).Hook(NewLocationHook("at")).With().Timestamp().Logger()
-		//logger.Debug().Msg("running in debugging mode")
 	} else {
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 		logger = zerolog.New(os.Stderr).With().Timestamp().Logger()
-		//logger.Debug().Msg("running in quiet mode")
 	}
 	return logger
 }

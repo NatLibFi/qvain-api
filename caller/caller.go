@@ -1,4 +1,5 @@
-package main
+// Package caller contains convenience functions to get function caller information.
+package caller
 
 import (
 	"fmt"
@@ -6,7 +7,8 @@ import (
 	"strconv"
 )
 
-func createStackInfoFunc(depth int, shorten bool) func() string {
+// CreateStackInfoFunc returns a closure function that for a given depth returns stack caller information (file and line).
+func CreateStackInfoFunc(depth int, shorten bool) func() string {
 	return func() string {
 		_, file, line, ok := runtime.Caller(depth)
 		if !ok {
@@ -27,7 +29,8 @@ func createStackInfoFunc(depth int, shorten bool) func() string {
 	}
 }
 
-func createStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) func() string {
+// CreateStackInfoWithFuncnameFunc returns a closure function that for a given depth returns stack caller information (file, line and function name *if* found).
+func CreateStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) func() string {
 	return func() string {
 		pc, file, line, ok := runtime.Caller(depth)
 		if !ok {
@@ -58,7 +61,8 @@ func createStackInfoWithFuncnameFunc(depth int, shorten bool, withFn bool) func(
 	}
 }
 
-func getStackInfo(depth int) string {
+// GetStackInfo returns caller stack information (file and line) for a given depth.
+func GetStackInfo(depth int) string {
 	_, file, line, ok := runtime.Caller(depth)
 	if !ok {
 		return fmt.Sprintf("???:???")
