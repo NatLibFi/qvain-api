@@ -8,9 +8,6 @@ import (
 	"github.com/jackc/pgx"
 )
 
-// DSN="user=username password=password host=1.2.3.4 port=5432 dbname=mydb sslmode=disable"
-// "user=qvain password=" + os.Getenv("PGPASS") + " host=/home/wouter/.s.PGSQL.5432 dbname=qvain sslmode=disable"
-
 func BenchmarkSelect(b *testing.B) {
 	var query string = "SELECT schema FROM datasets WHERE id = '055f1f96-1d1d-e046-3457-b15e1bd8c10c'"
 
