@@ -30,7 +30,7 @@ _links to CSC's Metax related resources_
 - [Jira bug tracker](https://jira.eduuni.fi/projects/CSCMETAX)
 - Eduuni wiki:
   - [Development](https://wiki.eduuni.fi/display/CSCMETAX/Development)
-  - [Rest API](https://wiki.eduuni.fi/display/CSCMETAX/REST)
+  - [API documentation](https://wiki.eduuni.fi/display/CSCMETAX/API+documentation)
   - [Database](https://wiki.eduuni.fi/display/CSCMETAX/Database+documentation)
   - [Reference data](https://wiki.eduuni.fi/display/CSCMETAX/Reference+Data)
 - Flowdock: [development](https://www.flowdock.com/app/tiptop/metax-kehitys) and [general](https://www.flowdock.com/app/tiptop/metax) chat
@@ -68,5 +68,5 @@ _links to FairData ID service_
 
 
 ## Other
-- [Integration tests](https://github.com/CSCfi/FAIRDATAintegrationtest) for FairData services
+- [Integration tests](https://github.com/CSCfi/FAIRDATAtest) for FairData services
 - [Tutkimus-PAS architectural overview](https://wiki.eduuni.fi/display/att/Tutkimus-PAS+arkkitehtuurikuvauksia)

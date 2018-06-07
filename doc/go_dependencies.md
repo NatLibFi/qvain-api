@@ -5,23 +5,23 @@ This auto-generated document lists all imports and indirect package dependencies
 
 ### Imports (directly imported packages)
 
+	github.com/felixge/httpsnoop
 	github.com/garyburd/redigo/redis
 	github.com/gorilla/websocket
 	github.com/jackc/pgx
 	github.com/lestrrat/go-jwx/jwa
 	github.com/lestrrat/go-jwx/jwt
-	github.com/mailru/easyjson
-	github.com/mailru/easyjson/jlexer
-	github.com/mailru/easyjson/jwriter
+	github.com/mattn/go-isatty
 	github.com/patrickmn/go-cache
-	github.com/pquerna/ffjson/fflib/v1
 	github.com/rs/zerolog
+	github.com/rs/zerolog/log
 	github.com/tidwall/gjson
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
 
 ### Dependencies (packages required by imported packages)
 
+	github.com/felixge/httpsnoop
 	github.com/garyburd/redigo/redis
 	github.com/gorilla/websocket
 	github.com/jackc/pgx
@@ -39,19 +39,16 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/lestrrat/go-jwx/jws/verify
 	github.com/lestrrat/go-jwx/jwt
 	github.com/lestrrat/go-pdebug
-	github.com/mailru/easyjson
-	github.com/mailru/easyjson/buffer
-	github.com/mailru/easyjson/jlexer
-	github.com/mailru/easyjson/jwriter
+	github.com/mattn/go-isatty
 	github.com/patrickmn/go-cache
 	github.com/pkg/errors
-	github.com/pquerna/ffjson/fflib/v1
 	github.com/rs/zerolog
 	github.com/rs/zerolog/internal/json
+	github.com/rs/zerolog/log
 	github.com/tidwall/gjson
 	github.com/tidwall/match
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
 
 -- 
-generated on 2018-03-27 at commit 4a5488b by make_go_dependencies_list.sh
+generated on 2018-05-29 at commit 85c0e0e by make_go_dependencies_list.sh

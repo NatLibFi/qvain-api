@@ -61,3 +61,31 @@ _query for files and directories at path_
 		- .directory_path
 	notes:
 		- API client is javascript, Vue with Axios library
+
+
+## Sync process
+
+Description of the synchronisation logic between Qvain and Metax.
+
+- Qvain connects to Metax dataset endpoint:
+	- query parameters:
+		- no_pagination=true
+		- stream=true
+		- owner_id=<uuid>
+	- headers:
+		- `If-Modified-Since`
+- Metax responds in JSON format with an array of dataset objects and `X-Count` header set to the number of objects that will be returned;
+	- if `owner_id` was included in the request, only records for the given Qvain owner uuid will be returned;
+	- if `owner_id` was not included, all records relevant to Qvain will be returned;
+	- if `If-Modified-Since` was provided in the request's headers, only records with a modification time after the one provided will be returned;
+	- the response shall not included any other fields such as paging because it will be parsed as a stream.
+- Qvain parses the stream per object, looking for the Qvain metadata block `dataset.editor` with the following fields:
+	- `dataset.editor.dataset_id`
+	- `dataset.editor.identifier`
+	- `dataset.editor.creator_id`
+	- `dataset.editor.owner_id`
+- Qvain validates the metadata block:
+	- if there is no `dataset.editor object`, Qvain skips the record;
+	- if there is no `dataset.editor.identifier` object or it is not the literal string "qvain", Qvain skips the record;
+	- if there is a `dataset.editor.dataset_id` value and it parses as a UUID, Qvain overwrites the local record;
+	- if there is no `dataset.editor.dataset_id` value, but `dataset.editor.owner_id` is set, Qvain will create a new record with the given owner and the current date;
