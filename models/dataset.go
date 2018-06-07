@@ -7,8 +7,9 @@ import (
 )
 
 var (
-	errNeedFamily = errors.New("need schema family type for metadata")
-	errNeedSchema = errors.New("need schema name for metadata")
+	errNeedFamily  = errors.New("need schema type for dataset")
+	errNeedSchema  = errors.New("need schema name for dataset")
+	errNeedDataset = errors.New("need dataset blob")
 )
 
 type Dataset struct {
@@ -24,7 +25,7 @@ type Dataset struct {
 
 	family int
 	schema string
-	blob   string
+	blob   []byte
 
 	valid bool
 }
@@ -46,20 +47,33 @@ func NewDataset(creator uuid.UUID) (*Dataset, error) {
 	}, nil
 }
 
-// SetMetadata sets the schema family and name as well as the metadata blob.
+// SetData sets the schema family and name as well as the metadata blob.
 // It is an error not to provide the appropriate schema family and name.
-func (ds *Dataset) SetMetadata(family int, schema, blob string) error {
-	if family == 0 {
+func (ds *Dataset) SetData(family int, schema string, blob []byte) error {
+	if family < 0 {
 		return errNeedFamily
 	}
 	if schema == "" {
 		return errNeedSchema
+	}
+	if blob == nil {
+		blob = []byte("")
 	}
 	ds.family = family
 	ds.schema = schema
 	ds.blob = blob
 
 	return nil
+}
+
+// CreateData allows dataset types to override what happens on dataset creation.
+func (ds *Dataset) CreateData(family int, schema string, blob []byte) error {
+	return ds.SetData(family, schema, blob)
+}
+
+// UpdateData allows dataset types to override what happens on update of an existing dataset.
+func (ds *Dataset) UpdateData(family int, schema string, blob []byte) error {
+	return ds.SetData(family, schema, blob)
 }
 
 func (ds *Dataset) Family() int {
@@ -70,7 +84,7 @@ func (ds *Dataset) Schema() string {
 	return ds.schema
 }
 
-func (ds *Dataset) Blob() string {
+func (ds *Dataset) Blob() []byte {
 	return ds.blob
 }
 
@@ -80,4 +94,8 @@ func (ds *Dataset) SetValid(valid bool) {
 
 func (ds *Dataset) IsValid() bool {
 	return ds.valid
+}
+
+func (ds *Dataset) Unwrap() *Dataset {
+	return ds
 }

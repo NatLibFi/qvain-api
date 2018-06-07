@@ -1,40 +1,24 @@
 package models
 
-/*
- * type DatasetModel struct {
- *	Name     string `json:"name"`
- *	baseType int    `json:"family"`
- * }
- */
+import (
+	"strings"
 
-//func (model *DatasetModel) BaseType() *DatasetType {}
-
-var (
-	schemaFamilies = []*SchemaFamily{
-		{0, "zero", false, []string{}},
-		{1, "open", true, nil},
-		{2, "metax", true, []string{"metadata", "contracts", "files"}},
-	}
-
-	_idMap = make(map[int]*SchemaFamily)
+	"github.com/wvh/uuid"
 )
 
-func init() {
-	for _, fam := range schemaFamilies {
-		_idMap[fam.Id] = fam
-	}
-}
+// NewFunc is a constructor function that creates a new typed datatset satisfying the TypedDataset interface.
+type NewFunc func(uuid.UUID) (TypedDataset, error)
 
-func LookupFamily(id int) (fam *SchemaFamily, found bool) {
-	fam, found = _idMap[id]
-	return
-}
+// LoadFunc is a constructor function that wraps a base dataset returning a typed dataset satisfying the TypedDataset interface.
+type LoadFunc func(*Dataset) TypedDataset
 
+// SchemaFamily defines a dataset type.
 type SchemaFamily struct {
 	Id          int
-	FamilyName  string
-	isVisible   bool
-	publicPaths []string `json:"public"`
+	Name        string
+	NewFunc     NewFunc
+	LoadFunc    LoadFunc
+	publicPaths []string
 }
 
 // IsPathPublic returns a boolean indicating if the dataset's subkey can be shown via API.
@@ -43,7 +27,7 @@ func (fam *SchemaFamily) IsPathPublic(p string) bool {
 	if fam.publicPaths == nil {
 		return true
 	}
-	return contains(fam.publicPaths, p)
+	return inPrefixes(fam.publicPaths, p)
 }
 
 // contains does a simple linear string search.
@@ -51,6 +35,16 @@ func (fam *SchemaFamily) IsPathPublic(p string) bool {
 func contains(a []string, s string) bool {
 	for _, v := range a {
 		if s == v {
+			return true
+		}
+	}
+	return false
+}
+
+// inPrefixes does a simple linear string prefix search.
+func inPrefixes(prefixes []string, s string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(s, prefix) {
 			return true
 		}
 	}
