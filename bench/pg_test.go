@@ -14,9 +14,9 @@ import (
 func BenchmarkSelect(b *testing.B) {
 	var query string = "SELECT schema FROM datasets WHERE id = '055f1f96-1d1d-e046-3457-b15e1bd8c10c'"
 
-	config, err := pgx.ParseDSN(os.Getenv("DSN"))
+	config, err := pgx.ParseEnvLibpq()
 	if err != nil {
-		b.Fatal("can't parse DSN config string: ", err)
+		b.Fatal("can't parse psql config from env: ", err)
 	}
 
 	conn, err := pgx.Connect(config)
