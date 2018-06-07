@@ -25,9 +25,23 @@ CREATE TABLE datasets (
 	
 	pushed      timestamp with time zone,
 	pulled      timestamp with time zone,
-	
+
+	published   boolean DEFAULT false,
 	valid       boolean DEFAULT false,
+	
 	family      int,
 	schema      text,
 	blob        jsonb
+);
+
+CREATE TABLE identities (
+	uid     uuid PRIMARY KEY,
+	extid   text NOT NULL
+);
+
+CREATE TABLE lastsync (
+	uid      uuid PRIMARY KEY REFERENCES identities(uid),
+	ts       timestamp with time zone,
+	success  boolean DEFAULT false,
+	msg      text
 );
