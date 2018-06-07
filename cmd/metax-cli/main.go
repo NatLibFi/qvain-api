@@ -34,18 +34,26 @@ var Verbose bool
 func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "  datasets   query dataset API endpoint")
+	fmt.Fprintln(os.Stderr, "  fetch      fetch from dataset API endpoint")
+	fmt.Fprintln(os.Stderr, "  create     post new dataset to API endpoint")
 	fmt.Fprintln(os.Stderr, "  version    query version")
 	fmt.Fprintln(os.Stderr, "")
 }
 
 func usageFor(flags *flag.FlagSet, short string) func() {
 	return func() {
+		var hasFlags bool = false // go doesn't let us count how many flags are defined
+
 		fmt.Fprintf(os.Stderr, "USAGE\n")
 		fmt.Fprintf(os.Stderr, "  %s %s\n", ProgramName, short)
 		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "FLAGS\n")
+
 		w := tabwriter.NewWriter(os.Stderr, 0, 2, 2, ' ', 0)
 		flags.VisitAll(func(f *flag.Flag) {
+			if !hasFlags {
+				fmt.Fprintf(os.Stderr, "FLAGS\n")
+				hasFlags = true
+			}
 			fType, fUsage := flag.UnquoteUsage(f)
 			if f.DefValue != "" {
 				fmt.Fprintf(w, "\t-%s %s\t%s (default: %q)\n", f.Name, fType, fUsage, f.DefValue)
@@ -54,7 +62,9 @@ func usageFor(flags *flag.FlagSet, short string) func() {
 			}
 		})
 		w.Flush()
-		fmt.Fprintf(os.Stderr, "\n")
+		if hasFlags {
+			fmt.Fprintf(os.Stderr, "\n")
+		}
 	}
 }
 
@@ -80,6 +90,12 @@ func main() {
 	case "datasets":
 		endpoint = DATASETS_URL
 		run = runDatasets
+	case "fetch":
+		endpoint = DATASETS_URL
+		run = runFetch
+	case "create":
+		endpoint = DATASETS_URL
+		run = runCreate
 	case "version":
 		run = runVersion
 	default:
@@ -93,75 +109,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-/*
-func notmain() {
-	var uid uuidflag.Uuid
-
-	flag.BoolVar(&Verbose, "v", false, "verbose")
-	flag.Var(&uid, "uid", "user `uuid`")
-	flag.Parse()
-
-	if len(flag.Args()) != 1 || flag.Arg(0) == "" {
-		fmt.Println("MetaX query tester")
-		fmt.Println("using:", API_URL)
-		fmt.Println()
-		fmt.Printf( "usage: %s <recordset id>\n", os.Args[0])
-		fmt.Printf( "example: %s pid:urn:cr3\n", os.Args[0])
-		os.Exit(1)
-	}
-
-	api := metax.MetaxServer{ApiUrl: API_URL}
-	json, err := api.GetId(flag.Arg(0))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	if Verbose {
-		printBlock("FULL JSON", json)
-	}
-
-	record, err := api.ParseRecord(json)
-	if err != nil {
-		panic(err)
-	}
-
-	if (record.ModifiedByUserId != nil) {
-		fmt.Printf("modified_by_user_id: %s\n", *record.ModifiedByUserId)
-	}
-	if (record.CreatedByApi != nil) {
-		fmt.Printf("created_by_api: %s\n", *record.CreatedByApi)
-	}
-
-	if Verbose {
-		printBlock("RESEARCH DATASET", string(record.ResearchDataset))
-	}
-
-	keys, err := api.ParseRootKeys(json)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("top-level keys:", keys)
-
-	_ = time.Now()
-	//oneHourAgo := time.Now().Add(-time.Duration(time.Hour))
-	//json, err = api.Query(api.UrlForIds(), metax.Since(oneHourAgo), metax.Owner("fucking_test_user"))
-	json, err = api.Query(api.UrlForIds(), metax.Owner("fucking_test_user"))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	//fmt.Println(json)
-	list, err := api.ParseList(json)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("records:", list.Count)
-	//fmt.Println("smt:", *list.Results[0].CreatedByApi)
-	for i, rec := range list.Results {
-		fmt.Printf("result: %d, date: %s\n", i, *rec.CreatedByApi)
-	}
-}
-*/

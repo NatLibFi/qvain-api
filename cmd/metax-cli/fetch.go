@@ -4,23 +4,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/NatLibFi/qvain-api/metax"
+	"github.com/NatLibFi/qvain-api/psql"
 	"github.com/wvh/uuid/flag"
 )
 
-var stringIfMissing = ""
-
-func stringOr(s *string) *string {
-	if s != nil {
-		return s
-	}
-	return &stringIfMissing
-}
-
-func runDatasets(url string, args []string) error {
-	flags := flag.NewFlagSet("datasets", flag.ExitOnError)
+func runFetch(url string, args []string) error {
+	flags := flag.NewFlagSet("sync", flag.ExitOnError)
 	var (
 		owner uuidflag.Uuid
 		since string
@@ -61,46 +54,23 @@ func runDatasets(url string, args []string) error {
 		fmt.Println("User:", owner)
 	}
 
-	fmt.Println("querying metax datasets endpoint")
+	fmt.Println("syncing with metax datasets endpoint")
+	pg, err := psql.NewPoolService("user=qvain password=" + os.Getenv("PGPASS") + " host=/home/wouter/.s.PGSQL.5432 dbname=qvain sslmode=disable")
+	if err != nil {
+		return err
+	}
+	//fmt.Println(pg.Check())
+	fmt.Println(pg.Version())
+
+	batch, err := pg.NewBatch()
+	if err != nil {
+		return err
+	}
+	defer batch.Rollback()
+
 	svc := metax.NewMetaxService(METAX_HOST)
-	// 053bffbcc41edad4853bea91fc42ea18
-	response, err := svc.Datasets(metax.WithOwner(owner.String()))
-	if err != nil {
-		return err
-	}
-	fmt.Println("count (api):", response.Count)
-	for _, rec := range response.Results {
-		//fmt.Printf("%+v\n", rec)
-		fmt.Printf("%+v\n", rec.Editor)
-		if rec.Editor != nil {
-			if rec.Editor.OwnerId != nil {
-				fmt.Println("owner:", *rec.Editor.OwnerId)
-			}
-			if rec.Editor.CreatorId != nil {
-				fmt.Println("creator:", *rec.Editor.CreatorId)
-			}
-		}
-	}
-
-	streamResponse, err := svc.ReadStream(metax.WithOwner(owner.String()))
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("stream response:", len(streamResponse))
-	for i, dataset := range streamResponse {
-		fmt.Printf("%05d:\n", i+1)
-		fmt.Println("  id:", dataset.Id)
-		if dataset.Editor != nil {
-			fmt.Printf("  dump: %#v\n", dataset.Editor)
-			fmt.Println("  owner:", *stringOr(dataset.Editor.OwnerId))
-			fmt.Println("  creator:", *stringOr(dataset.Editor.OwnerId))
-			fmt.Println("  identifier:", *stringOr(dataset.Editor.Identifier))
-		}
-	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	//ctx, cancel := context.WithTimeout(context.Background(), 80*time.Millisecond)
 	defer cancel()
 
 	c, errc, err := svc.ReadStreamChannel(ctx, metax.WithOwner(owner.String()))
@@ -122,20 +92,17 @@ Done:
 			}
 			fmt.Printf("%05d:\n", i+1)
 			i++
-			dataset, err := rawRecord.Record()
+			dataset, err := rawRecord.ToQvain()
 			if err != nil {
 				//return err
 				fmt.Println("  skipping:", err)
 				continue
 			}
 			fmt.Println("  id:", dataset.Id)
-			if dataset.Editor != nil {
-				//fmt.Printf("  dump: %#v\n", dataset.Editor)
-				fmt.Println("  owner:", *stringOr(dataset.Editor.OwnerId))
-				fmt.Println("  creator:", *stringOr(dataset.Editor.OwnerId))
-				fmt.Println("  identifier:", *stringOr(dataset.Editor.Identifier))
+			if err = batch.Store(dataset); err != nil {
+				fmt.Println("  Store error:", err)
+				continue
 			}
-			//i++
 		case err := <-errc:
 			fmt.Println("api error:", ctx.Err())
 			return err
@@ -144,8 +111,9 @@ Done:
 			return err
 		}
 	}
-
-	fmt.Println("Done.")
+	if success {
+		batch.Commit()
+	}
 	fmt.Println("success:", success)
 	return nil
 }
