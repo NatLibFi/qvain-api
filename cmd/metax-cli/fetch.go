@@ -55,7 +55,7 @@ func runFetch(url string, args []string) error {
 	}
 
 	fmt.Println("syncing with metax datasets endpoint")
-	pg, err := psql.NewPoolService("user=qvain password=" + os.Getenv("PGPASS") + " host=/home/wouter/.s.PGSQL.5432 dbname=qvain sslmode=disable")
+	pg, err := psql.NewPoolServiceFromEnv()
 	if err != nil {
 		return err
 	}
