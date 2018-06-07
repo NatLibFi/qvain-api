@@ -6,7 +6,7 @@ import (
 	"github.com/NatLibFi/qvain-api/psql"
 )
 
-func runPgVersion(psql *psql.PsqlService, args []string) error {
+func runPgVersion(psql *psql.DB, args []string) error {
 	var version string
 	conn, err := psql.Connect()
 	if err != nil {

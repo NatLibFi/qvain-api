@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/version"
 )
 
 const ProgramName = "qvain-cli"
@@ -34,16 +35,19 @@ func goUsageFor(flags *flag.FlagSet, short string) func() {
 
 func usageFor(flags *flag.FlagSet, short string) func() {
 	return func() {
+		var hasFlags bool = false // go doesn't let us count how many flags are defined
+
 		fmt.Fprintf(os.Stderr, "USAGE\n")
 		fmt.Fprintf(os.Stderr, "  %s %s\n", ProgramName, short)
 		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "FLAGS\n")
+
 		w := tabwriter.NewWriter(os.Stderr, 0, 2, 2, ' ', 0)
 		flags.VisitAll(func(f *flag.Flag) {
-			//fmt.Fprintf(w, "\t-%s %s\t%s\n", f.Name, f.DefValue, f.Usage)
+			if !hasFlags {
+				fmt.Fprintf(os.Stderr, "FLAGS\n")
+				hasFlags = true
+			}
 			fType, fUsage := flag.UnquoteUsage(f)
-			//defString := fmt.Sprintf(" (default: %v)", f.DefValue)
-			//fmt.Fprintf(w, "| type: %s, usage: %s, default: %s (%T)\n", fType, fUsage, defString, f.DefValue)
 			if f.DefValue != "" {
 				fmt.Fprintf(w, "\t-%s %s\t%s (default: %q)\n", f.Name, fType, fUsage, f.DefValue)
 			} else {
@@ -51,22 +55,27 @@ func usageFor(flags *flag.FlagSet, short string) func() {
 			}
 		})
 		w.Flush()
-		fmt.Fprintf(os.Stderr, "\n")
+		if hasFlags {
+			fmt.Fprintf(os.Stderr, "\n")
+		}
 	}
 }
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "  add         add record")
-	fmt.Fprintln(os.Stderr, "  list        list records")
+	fmt.Fprintln(os.Stderr, "  export      export record [json]")
 	fmt.Fprintln(os.Stderr, "")
-	fmt.Fprintln(os.Stderr, "  version     query Postgresql version")
+	fmt.Fprintln(os.Stderr, "  api:")
+	fmt.Fprintln(os.Stderr, "  view        view datasets by owner [json]")
 	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "  db          query db version")
+	fmt.Fprintln(os.Stderr, "  version     show version tag if compiled in")
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, "This program outputs valid JSON on STDOUT for many commands.")
 }
 
 func main() {
-	fmt.Println("psql tester")
-
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: %s <sub-command> [flags]\n", os.Args[0])
 		usage()
@@ -74,36 +83,33 @@ func main() {
 	}
 
 	//var run func(*pgx.Conn, []string) error
-	var run func(*psql.PsqlService, []string) error
+	var run func(*psql.DB, []string) error
 	switch os.Args[1] {
-	case "version":
+	case "db":
 		run = runPgVersion
 	case "add":
 		run = runAddRecord
+	case "view":
+		run = runViewByOwner
+	case "export":
+		run = runExportDataset
+	case "version":
+		if len(version.CommitTag) > 0 {
+			fmt.Fprintln(os.Stderr, "qvain-cli", version.CommitTag)
+		} else {
+			fmt.Fprintln(os.Stderr, "qvain-cli <unknown>")
+		}
+		return
 	default:
 		fmt.Printf("%s: unknown sub-command: %s\n", os.Args[0], os.Args[1])
 		usage()
 		os.Exit(1)
 	}
 
-	pg, err := psql.NewService("user=qvain password=" + os.Getenv("PGPASS") + " host=/home/wouter/.s.PGSQL.5432 dbname=qvain sslmode=disable")
+	pg, err := psql.NewPoolServiceFromEnv()
 	if err != nil {
 		panic(err)
 	}
-
-	//err = pg.InitPool()
-	//if err != nil {
-	//	panic(err)
-	//}
-
-	/*
-		conn, err := pg.NewConn()
-		if err != nil {
-			//panic(err)
-			fmt.Fprintln(os.Stderr, "can't connect to database:", err)
-		}
-		//defer conn.Close()
-	*/
 
 	if err := run(pg, os.Args[2:]); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)

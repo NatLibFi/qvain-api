@@ -10,7 +10,7 @@ import (
 	"github.com/wvh/uuid/flag"
 )
 
-func runAddRecord(psql *psql.PsqlService, args []string) error {
+func runAddRecord(psql *psql.DB, args []string) error {
 	flags := flag.NewFlagSet("add", flag.ExitOnError)
 	var (
 		creator uuidflag.Uuid
@@ -48,7 +48,7 @@ func runAddRecord(psql *psql.PsqlService, args []string) error {
 	if err != nil {
 		return err
 	}
-	record.SetMetadata(0, schema, string(blob))
+	record.SetData(0, schema, blob)
 	fmt.Printf("%+v\n", record)
 
 	err = psql.Store(record)

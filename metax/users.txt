@@ -1,7 +1,0 @@
-# handy list of test UUIDs; do not check in
-
-053bffbcc41edad4853bea91fc42ea18 Wouter Van Hemel
-053d18ecb29e752cb7a35cd77b34f5fd Esa-Pekka Keskitalo
-05593961536b76fa825281ccaedd4d4f Anis Moubarik
-055ea4dade5ab2145954f56d4b51cef0 Hannu Kämäräinen
-055ea531a6cac569425bed94459266ee Juha-Matti Lehtinen
