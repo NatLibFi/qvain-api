@@ -2,9 +2,9 @@ package metax
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
-	"errors"
 
 	"github.com/NatLibFi/qvain-api/models"
 	"github.com/wvh/uuid"
@@ -18,7 +18,6 @@ var noRecords []MetaxRecord
 func init() {
 	models.RegisterFamily(2, "metax", NewMetaxDataset, LoadMetaxDataset, []string{"research_metadata", "contracts"})
 }
-
 
 type MetaxDataset struct {
 	*models.Dataset
@@ -110,8 +109,6 @@ func (dataset *MetaxDataset) UpdateData(family int, schema string, blob []byte) 
 	return nil
 }
 
-
-
 type MetaxRecord struct {
 	Id int64 `json:"id"`
 
@@ -127,7 +124,6 @@ type MetaxRecord struct {
 	Contract        json.RawMessage `json:"contract"`
 }
 
-
 // Editor is the Go representation of the Editor object in a Metax record.
 type Editor struct {
 	Identifier *string `json:"identifier"`
@@ -136,7 +132,6 @@ type Editor struct {
 	OwnerId    *string `json:"owner_id,omitempty"`
 	ExtId      *string `json:"fd_id,omitempty"`
 }
-
 
 // MetaxRawRecord is an alias for json.RawMessage that contains an unparsed JSON []byte slice.
 type MetaxRawRecord struct {
@@ -169,9 +164,9 @@ func (record *MetaxRecord) Validate() error {
 	}
 
 	/*
-	if record.Editor.RecordId == nil {
-		return NewLinkingError("record_id")
-	}
+		if record.Editor.RecordId == nil {
+			return NewLinkingError("record_id")
+		}
 	*/
 
 	if record.Editor.CreatorId == nil {
@@ -201,10 +196,10 @@ func (raw MetaxRawRecord) ToQvain() (*models.Dataset, error) {
 
 	var id, creator, owner uuid.UUID
 	/*
-	if id, err = uuid.FromString(*mrec.Editor.Identifier); err != nil {
-		fmt.Printf("%#v // %v\n", *mrec.Editor.Identifier, err)
-		return nil, NewLinkingError("identifier-uuid")
-	}
+		if id, err = uuid.FromString(*mrec.Editor.Identifier); err != nil {
+			fmt.Printf("%#v // %v\n", *mrec.Editor.Identifier, err)
+			return nil, NewLinkingError("identifier-uuid")
+		}
 	*/
 	if id, err = uuid.FromString(fmt.Sprintf("056bffbcc41edad4853bea91%08d", mrec.Id)); err != nil {
 		fmt.Printf("%8d // %v\n", mrec.Id, err)
@@ -222,11 +217,11 @@ func (raw MetaxRawRecord) ToQvain() (*models.Dataset, error) {
 	now := time.Now()
 
 	qrec := models.Dataset{
-		Id: id,
+		Id:      id,
 		Creator: creator,
-		Owner: owner,
+		Owner:   owner,
 
-		Created: now,
+		Created:  now,
 		Modified: now,
 	}
 	qrec.SetData(2, "metax", raw.RawMessage)

@@ -35,9 +35,8 @@ func (e *LinkingError) IsNotMine() bool {
 	return e.field == ""
 }
 
-
 type ApiError struct {
-	myError string
+	myError    string
 	metaxError json.RawMessage
 }
 

@@ -18,10 +18,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	//"net/url"
-	"strings"
 	"bytes"
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/NatLibFi/qvain-api/version"
 	"github.com/rs/zerolog"
@@ -38,7 +38,7 @@ var UserAgent string = "qvain " + version.CommitHash
 
 var (
 	errStreamMustBeArray = errors.New("stream is not a json array")
-	errEmptyDataset = errors.New("dataset is empty")
+	errEmptyDataset      = errors.New("dataset is empty")
 )
 
 func init() {
@@ -55,8 +55,8 @@ type MetaxService struct {
 
 	urlDatasets string
 
-	user         string
-	pass         string
+	user string
+	pass string
 }
 
 type MetaxOption func(*MetaxService)
@@ -81,7 +81,7 @@ func WithCredentials(user, pass string) MetaxOption {
 // NewMetaxService returns a Metax API client.
 func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 	svc := &MetaxService{
-		host: host,
+		host:   host,
 		logger: zerolog.Nop(),
 		client: &http.Client{
 			Timeout: 5 * time.Second,
@@ -101,9 +101,9 @@ func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 
 	//if svc.logger == nil {
 	/*
-	if svc.logger == (zerolog.Logger{}) {
-		svc.logger = log.Logger
-	}
+		if svc.logger == (zerolog.Logger{}) {
+			svc.logger = log.Logger
+		}
 	*/
 	//svc.logger = zerolog.Nop()
 	svc.logger = log.Logger
@@ -354,13 +354,13 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	// WARNING: go routine below is responsible for closing the response body
 
 	switch res.StatusCode {
-		case 200:
-		case 404:
-			return nil, nil, fmt.Errorf("error: not found (code: %d)", res.StatusCode)
-		case 403:
-			return nil, nil, fmt.Errorf("error: forbidden (code: %d)", res.StatusCode)
-		default:
-			return nil, nil, fmt.Errorf("error: can't retrieve record (code: %d)", res.StatusCode)
+	case 200:
+	case 404:
+		return nil, nil, fmt.Errorf("error: not found (code: %d)", res.StatusCode)
+	case 403:
+		return nil, nil, fmt.Errorf("error: forbidden (code: %d)", res.StatusCode)
+	default:
+		return nil, nil, fmt.Errorf("error: can't retrieve record (code: %d)", res.StatusCode)
 	}
 
 	if !strings.HasPrefix(res.Header.Get("Content-Type"), "application/json") {
@@ -426,7 +426,6 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	return outc, errc, nil
 }
 
-
 func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json.RawMessage, error) {
 	if blob == nil || len(blob) < 1 {
 		return nil, errEmptyDataset
@@ -457,14 +456,14 @@ func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json
 	}
 
 	switch res.StatusCode {
-		case 201:
-			return body, nil
-		case 400:
-			return nil, &ApiError{"invalid dataset", body}
-		case 401:
-			return nil, &ApiError{"authorisation required", nil}
-		default:
-			return nil, &ApiError{fmt.Sprintf("API returned status code %d", res.StatusCode), nil}
+	case 201:
+		return body, nil
+	case 400:
+		return nil, &ApiError{"invalid dataset", body}
+	case 401:
+		return nil, &ApiError{"authorisation required", nil}
+	default:
+		return nil, &ApiError{fmt.Sprintf("API returned status code %d", res.StatusCode), nil}
 	}
 
 	fmt.Println("response Status:", res.Status)
