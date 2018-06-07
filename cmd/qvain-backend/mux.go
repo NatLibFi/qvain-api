@@ -13,8 +13,6 @@ func makeMux(config *Config) *http.ServeMux {
 
 	// static endpoints
 	mux.HandleFunc("/", welcome)
-	mux.HandleFunc("/echo", echo)
-	mux.Handle("/Qvain/", http.FileServer(http.Dir("/home/wouter/Code/Javascript/")))
 
 	// token middleware
 	jwt := jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))

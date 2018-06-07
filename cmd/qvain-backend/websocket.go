@@ -1,3 +1,6 @@
+// WARNING: dead code
+// +build ignore
+
 package main
 
 import (
