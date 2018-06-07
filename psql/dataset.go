@@ -6,10 +6,11 @@ import (
 	"github.com/NatLibFi/qvain-api/models"
 	"github.com/wvh/uuid"
 	"log"
+	"time"
 	//"github.com/jackc/pgx"
 )
 
-func (db *PsqlService) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
+func (db *DB) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
 	tx, err := db.pool.Begin()
 	if err != nil {
 		return err
@@ -30,7 +31,7 @@ func (db *PsqlService) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
 	return nil
 }
 
-func (db *PsqlService) Store(dataset *models.Dataset) error {
+func (db *DB) Store(dataset *models.Dataset) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -50,7 +51,7 @@ func (db *PsqlService) Store(dataset *models.Dataset) error {
 	return nil
 }
 
-func (db *PsqlService) BatchStore(datasets []*models.Dataset) error {
+func (db *DB) BatchStore(datasets []*models.Dataset) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -90,22 +91,194 @@ func (tx *Tx) Store(dataset *models.Dataset) error {
 	return nil
 }
 
-func (db *PsqlService) Get(id uuid.UUID) (*models.Dataset, error) {
+func (db *DB) Update(id uuid.UUID, blob []byte) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.update(id, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+// UpdateWithOwner updates a dataset with ownership checks.
+func (db *DB) UpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return err
+	}
+
+	err = tx.update(id, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+func (tx *Tx) update(id uuid.UUID, blob []byte) error {
+	ct, err := tx.Exec("UPDATE datasets SET modified = now(), blob = $2 WHERE id = $1", id.Array(), blob)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (db *DB) Patch(id uuid.UUID, blob []byte) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.patch(id, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+// PatchWithOwner patches a dataset JSON blob with ownership checks.
+func (db *DB) PatchWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return err
+	}
+
+	err = tx.patch(id, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+func (tx *Tx) patch(id uuid.UUID, blob []byte) error {
+	ct, err := tx.Exec("UPDATE datasets SET modified = now(), blob = blob || $2 WHERE id = $1", id.Array(), blob)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// checkOwner returns an error if the record is not owned by the given user.
+func (tx *Tx) checkOwner(id uuid.UUID, owner uuid.UUID) error {
+	var isOwner bool
+	err := tx.QueryRow("SELECT (owner = $2) FROM datasets WHERE id = $1", id.Array(), owner.Array()).Scan(&isOwner)
+	if err != nil {
+		return handleError(err)
+	}
+
+	if !isOwner {
+		return ErrNotOwner
+	}
+
+	return nil
+}
+
+// MarkPublished marks a dataset as published and updates its sync time. It does not do owner checks.
+func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.markPublished(id, published)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// MarkPublishedByOwner marks a dataset as published and updates its sync time. It checks if the given user is the dataset's owner first.
+func (db *DB) MarkPublishedWithOwner(id uuid.UUID, owner uuid.UUID, published bool) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return err
+	}
+
+	err = tx.markPublished(id, published)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// markPublished does the actual marking of a dataset as published.
+func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
+	ct, err := tx.Exec("UPDATE datasets SET published = $2, pushed = $3 WHERE id = $1", id.Array(), published, time.Now())
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	var (
 		family *int
 		schema *string
-		blob   *string
+		blob   []byte
 	)
+
 	res := new(models.Dataset)
-	err := db.pool.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id, res.Creator, res.Owner, family, schema, blob)
+	err := db.pool.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	err = res.SetData(*family, *schema, blob)
 	if err != nil {
 		return nil, err
 	}
-	res.SetMetadata(*family, *schema, *blob)
+
 	return res, nil
 }
 
-func (db *PsqlService) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
+func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	var list []*models.Dataset
 
 	rows, err := db.pool.Query("select id, creator, owner, family, schema, valid from datasets where owner=$1", uid.Array())
@@ -125,7 +298,7 @@ func (db *PsqlService) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 		if err != nil {
 			return nil, err
 		}
-		dataset.SetMetadata(family, schema, "")
+		dataset.SetData(family, schema, nil)
 		if err != nil {
 			return nil, err
 		}
