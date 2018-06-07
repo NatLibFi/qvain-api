@@ -7,7 +7,9 @@ import (
 	"path"
 	"strings"
 
+	"github.com/NatLibFi/qvain-api/jwt"
 	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/psql"
 	"github.com/NatLibFi/qvain-api/version"
 	"github.com/wvh/uuid"
 	//"encoding/json"
@@ -26,6 +28,7 @@ var fakeDatasets = []*models.Dataset{
 	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
 	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
 	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
+	{Id: uuid.MustFromString("056bffbcc41edad4853bea9100000001"), Creator: owner, Owner: owner},
 }
 
 var fakeDatasetMap map[uuid.UUID]*models.Dataset
@@ -81,24 +84,23 @@ func apiDatasetCollection(w http.ResponseWriter, r *http.Request) {
 
 type DatasetRouter struct {
 	mountedAt string
+	db        *psql.DB
 }
 
-func NewDatasetRouter(mountPoint string) *DatasetRouter {
-	return &DatasetRouter{mountedAt: path.Clean(mountPoint) + "/"}
+func NewDatasetRouter(mountPoint string, db *psql.DB) *DatasetRouter {
+	return &DatasetRouter{mountedAt: path.Clean(mountPoint) + "/", db: db}
 }
 
 func (api *DatasetRouter) Mountpoint() string {
 	return api.mountedAt
 }
 
-/*
-func (api *DatasetRouter) RelRoot() string {
-	if root = strings.TrimPrefix(r.URL.Path, api.mountedAt); len(root) < len(r.URL.Path) {
+func (api *DatasetRouter) Root(r *http.Request) string {
+	if root := strings.TrimPrefix(r.URL.Path, api.mountedAt); len(root) < len(r.URL.Path) {
 		return root
 	}
 	return ""
 }
-*/
 
 func (api *DatasetRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.Datasets(w, r)
@@ -130,13 +132,39 @@ func tail(p string) string {
 	return ""
 }
 
+func cuthead(p string) string {
+	if len(p) <= 1 {
+		return ""
+	}
+	if i := strings.IndexByte(p[1:], '/') + 2; i > 1 {
+		return p[i-1:]
+	}
+	return ""
+}
+
 func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
-	var root string
+	var (
+		root string
+		err  error
+	)
 
 	if root = strings.TrimPrefix(r.URL.Path, api.mountedAt); len(root) < len(r.URL.Path) {
 		fmt.Println("root:", root)
 	} else {
 		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	var user uuid.UUID
+	token, ok := jwt.FromContext(r.Context())
+	if ok {
+		user, err = uuid.FromString(token.Subject())
+		if err != nil {
+			ok = false
+		}
+	}
+	if !ok {
+		jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
@@ -148,10 +176,10 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 				w.Write([]byte(http.MethodGet))
 		*/
 		case http.MethodPost:
-			w.Write([]byte(http.MethodPost))
+			//w.Write([]byte(http.MethodPost))
+			api.createDataset(w, r, user)
 		default:
 			jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-			return
 		}
 		return
 	}
@@ -160,25 +188,26 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("WVH:", head(root))
 	id, err := uuid.FromString(head(root))
 	if err != nil {
-		jsonError(w, "bad format for uuid parameter", http.StatusBadRequest)
+		jsonError(w, "bad format for uuid path parameter", http.StatusBadRequest)
 		return
 	}
 	fmt.Println("id:", id)
 
-	api.Dataset(w, r, id)
+	api.Dataset(w, r, user, id)
 }
 
-func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+// Dataset handles requests for a dataset by UUID. It dispatches to request method specific handlers.
+func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, user uuid.UUID, id uuid.UUID) {
 	if _, e := fakeDatasetMap[id]; !e {
 		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
 	}
 
-	sub := tail(strings.TrimPrefix(r.URL.Path, api.mountedAt))
+	path := cuthead(strings.TrimPrefix(r.URL.Path, api.mountedAt))
 
 	switch r.Method {
 	case http.MethodGet:
-		api.getDataset(w, r, id, sub)
+		api.getDataset(w, r, user, id, path)
 		return
 	/*
 		case http.MethodPost:
@@ -189,7 +218,7 @@ func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, id uui
 	case http.MethodDelete:
 		w.Write([]byte(http.MethodDelete))
 	case http.MethodPatch:
-		api.patchDataset(w, r, id)
+		api.patchDataset(w, r, user, id)
 		return
 
 	default:
@@ -203,32 +232,76 @@ func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, id uui
 
 // getDataset retrieves a dataset's whole blob or part thereof depending on the path.
 // Not all datasets are fully viewable through the API.
-func (api *DatasetRouter) getDataset(w http.ResponseWriter, r *http.Request, id uuid.UUID, path string) {
+func (api *DatasetRouter) getDataset(w http.ResponseWriter, r *http.Request, user uuid.UUID, id uuid.UUID, path string) {
 	fmt.Println("id:", id, "path:", path)
 
 	// whole dataset is not visible through this API
 	// TODO: plug super-user check
-	if path == "" {
-		jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	if false && path == "" {
+		jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
 	// determine what sort of dataset family we're dealing with
-	if fam, found := models.LookupFamily(2); found {
-		fmt.Println("found fam:", fam.FamilyName)
+	//if fam, found := models.LookupFamily(2); found {
+	if fam := models.LookupFamily(2); fam != nil {
+		fmt.Println("found fam:", fam.Name)
 		// this part of the dataset is not public
 		if !fam.IsPathPublic(path) {
 			jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 	}
+	// else: panic?
 
+}
+
+func (api *DatasetRouter) createDataset(w http.ResponseWriter, r *http.Request, creator uuid.UUID) {
+	var err error
+
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
+		jsonError(w, http.StatusText(http.StatusUnsupportedMediaType), http.StatusUnsupportedMediaType)
+		return
+	}
+
+	if r.Body == nil || r.Body == http.NoBody {
+		jsonError(w, "empty body", http.StatusBadRequest)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	var blob json.RawMessage
+	err = decoder.Decode(&blob)
+	defer r.Body.Close()
+	if err != nil {
+		//jsonError(w, err.Error(), 500)
+		jsonError(w, "invalid json", http.StatusBadRequest)
+		return
+	}
+	r.Body.Close()
+
+	dataset, err := models.NewDataset(creator)
+	if err != nil {
+		jsonError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	dataset.SetData(2, "metax", blob)
+
+	err = api.db.Store(dataset)
+	if err != nil {
+		jsonError(w, "store failed", http.StatusBadRequest)
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf("%s %d\n", creator, r.ContentLength)))
+	return
 }
 
 //func (api *DatasetRouter) putDataset()
 
 // patchDataset allows changing a dataset's top fields.
-func (api *DatasetRouter) patchDataset(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+func (api *DatasetRouter) patchDataset(w http.ResponseWriter, r *http.Request, user uuid.UUID, id uuid.UUID) {
 	w.Write([]byte(http.MethodPatch))
 
 	decoder := json.NewDecoder(r.Body)
@@ -260,8 +333,50 @@ func ViewMetadata(w http.ResponseWriter, r *http.Request, id string) {
 
 }
 
+// apiHello catches all requests to the bare api endpoint.
+func apiHello(w http.ResponseWriter, r *http.Request) {
+	if r.RequestURI != "/api" && r.RequestURI != "/api/" {
+		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		return
+	}
+
+	if r.Method != "GET" {
+		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write([]byte(`"` + version.Id + ` api"` + "\n"))
+}
+
+// apiVersion returns the version information that was (hopefully) linked in at build time.
 func apiVersion(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("ETag", `"`+version.CommitHash+`"`)
 	fmt.Fprintf(w, `{"name":"%s","description":"%s","version":"%s","tag":"%s","hash":"%s","repo":"%s"}%c`, version.Name, version.Description, version.SemVer, version.CommitTag, version.CommitHash, version.CommitRepo, '\n')
+}
+
+func apiDatabaseCheck(db *psql.DB) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+
+		err := db.Check()
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			//w.WriteHeader()
+			fmt.Fprintf(w, `{"alive":false,"error":"%s"}%c`, err, '\n')
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"alive":true}` + "\n"))
+	})
 }

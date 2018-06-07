@@ -2,101 +2,176 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"time"
 
 	//"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/env"
 	"github.com/NatLibFi/qvain-api/jwt"
 	"github.com/NatLibFi/qvain-api/version"
 )
 
 const (
-	//DO_HTTPS_REDIRECT = true
-	RUN_STAND_ALONE   = false
-	HTTP_PROXIED_PORT = ":8080"
+	// http server setup
+	HttpProxyPort = "8080"
 
-	HTTP_READ_TIMEOUT  = 5 * time.Second
-	HTTP_WRITE_TIMEOUT = 5 * time.Second
-	HTTP_IDLE_TIMEOUT  = 120 * time.Second
+	// timeouts
+	HttpReadTimeout  = 5 * time.Second
+	HttpWriteTimeout = 5 * time.Second
+	HttpIdleTimeout  = 120 * time.Second
+
+	// additional info message when Go web server returns
+	strHttpServerPanic = "http server crashed"
 )
+
+var appConfig Config
+
+/*
+var (
+	// forceHttpOnly is a flag to override the default http scheme.
+	forceHttpOnly bool
+
+	// appDebug is a flag that sets debugging mode.
+	appDebug bool
+
+	// appLogger is the base logger to derive others from.
+	appLogger zerolog.Logger
+
+	// logger defines the logger for this (main) file.
+	logger zerolog.Logger
+)
+*/
 
 // startHttpsRedirector spawns a background HTTP server that redirects to https://.
 // NOTE: This function returns immediately.
-func startHttpsRedirector() {
+func startHttpsRedirector(config *Config) {
+	logger := config.NewLogger("main")
 	srv := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Connection", "close")
 			url := "https://" + r.Host + r.URL.String()
 			http.Redirect(w, r, url, http.StatusMovedPermanently)
 		}),
-		ReadTimeout:  HTTP_READ_TIMEOUT,
-		WriteTimeout: HTTP_WRITE_TIMEOUT,
+		ReadTimeout:  HttpReadTimeout,
+		WriteTimeout: HttpWriteTimeout,
+		ErrorLog:     adaptToStdlibLogger(config.NewLogger("go.http")),
 	}
 	srv.SetKeepAlivesEnabled(false)
-	log.Println("starting https redirect service")
-	go func() { log.Fatal(srv.ListenAndServe()) }()
+	logger.Info().Msg("starting https redirect server")
+	go func() { logger.Fatal().Err(srv.ListenAndServe()).Msg(strHttpServerPanic) }()
 }
 
-// makeMux() sets up the default handlers and returns a mux that can also be used for testing.
-func makeMux() *http.ServeMux {
-	mux := http.NewServeMux()
+/*
+func init() {
+	flag.BoolVar(&appDebug, "d", env.GetBool("APP_DEBUG"), "set debugging mode (env APP_DEBUG)")
+	flag.BoolVar(&forceHttpOnly, "http", env.GetBool("APP_FORCE_HTTP_SCHEME"), "force links to http:// (env APP_FORCE_HTTP_SCHEME)")
+	flag.Parse()
 
-	// static endpoints
-	mux.HandleFunc("/", welcome)
-	mux.HandleFunc("/echo", echo)
-	mux.Handle("/Qvain/", http.FileServer(http.Dir("/home/wouter/Code/Javascript/")))
-	//mux.HandleFunc("/api/dataset/", apiDataset)
-	//mux.Handle("/api/dataset/meta", needsDataset(http.HandlerFunc(apiMetadata)))
-
-	// token middleware
-	jwt := jwt.NewJwtHandler([]byte("secret"), "service.example.com", jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
-	mux.Handle("/protected", jwt.MustToken(http.HandlerFunc(protected)))
-
-	// api endpoint, show version
-	mux.HandleFunc("/api", apiVersion)
-
-	// dataset endpoints
-	dsRouter := NewDatasetRouter("/api/dataset/")
-	mux.Handle("/api/dataset/", dsRouter)
-
-	return mux
+	appLogger = createAppLogger(appDebug)
+	logger = appLogger.With().Str("component", "main").Logger()
 }
+*/
 
 func main() {
-	fmt.Println("qvain backend // hash:", version.CommitHash, version.CommitTag)
+	var (
+		appDebug      = flag.Bool("d", env.GetBool("APP_DEBUG"), "set debugging mode (env APP_DEBUG)")
+		forceHttpOnly = flag.Bool("http", env.GetBool("APP_FORCE_HTTP_SCHEME"), "force links to http:// (env APP_FORCE_HTTP_SCHEME)")
+
+		useHttpErrors = env.GetBool("APP_HTTP_ERRORS")
+	)
+	flag.Parse()
+
+	// get hostname; refuse to start without one
+	hostname, err := getHostname()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "can't get hostname:", err)
+		os.Exit(1)
+	}
+
+	// get token key
+	key, err := getTokenKey()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "invalid token key:", err)
+		os.Exit(1)
+	}
+	if len(key) < 1 {
+		fmt.Fprintln(os.Stderr, "fatal: no token key set in environment")
+		os.Exit(1)
+	}
+
+	config := &Config{
+		Hostname:      hostname,
+		Port:          env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+		Standalone:    env.GetBool("APP_HTTP_STANDALONE"),
+		ForceHttpOnly: *forceHttpOnly,
+		Debug:         *appDebug,
+		Logger:        createAppLogger(*appDebug),
+		UseHttpErrors: useHttpErrors,
+		tokenKey:      key,
+	}
+
+	logger := config.NewLogger("main")
+
+	if env.Get("APP_ENV_CHECK") == "" {
+		logger.Warn().Msg("environment variable APP_ENV_CHECK is not set")
+	}
+
+	err = config.initDB(config.NewLogger("psql"))
+	if err != nil {
+		logger.Error().Err(err).Msg("daba baad")
+	}
 
 	// set up default handlers
-	mux := makeMux()
+	mux := makeMux(config)
 
-	// default server
+	// adding logging middleware
+	loggingMux := makeLoggingHandler(mux, config.NewLogger("http"))
+
+	// add auth middleware
+	jwt := jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
+	authMux := jwt.MustToken(loggingMux)
+
+	// default server, without TLSConfig
 	srv := &http.Server{
-		Handler: mux,
-		//TLSConfig:         tlsConfig,
-		ReadTimeout: HTTP_READ_TIMEOUT,
-		//ReadHeaderTimeout: HTTP_READ_TIMEOUT,
-		WriteTimeout: HTTP_WRITE_TIMEOUT,
-		IdleTimeout:  HTTP_IDLE_TIMEOUT,
+		Handler:           authMux,
+		ReadTimeout:       HttpReadTimeout,
+		ReadHeaderTimeout: HttpReadTimeout,
+		WriteTimeout:      HttpWriteTimeout,
+		IdleTimeout:       HttpIdleTimeout,
+		ErrorLog:          adaptToStdlibLogger(config.NewLogger("go.http")),
 	}
 
 	// if standalone, run on 443 and start redirecting port 80; else run on 8080 or whatever is configured above
-	if RUN_STAND_ALONE {
+	var listen string
+	if config.Standalone {
 		if can, err := canNetBindService(); err == nil {
 			if !can {
-				fmt.Println("warning: need cap_net_bind_service capability to run stand-alone")
+				fmt.Fprintln(os.Stderr, "warning: need cap_net_bind_service capability to run stand-alone")
 			}
 		} else {
-			fmt.Println(err)
+			fmt.Fprintln(os.Stderr, err)
 		}
 
-		startHttpsRedirector()
 		srv.TLSConfig = tlsIntermediateConfig
-		log.Println("starting stand-alone server on default http/https ports")
-		log.Fatal(srv.ListenAndServe()) // TODO: certificate
+		listen = "*"
+		config.Port = "https"
+		startHttpsRedirector(config)
 	} else {
-		srv.Addr = HTTP_PROXIED_PORT
-		log.Println("starting proxied server on port", HTTP_PROXIED_PORT)
-		log.Fatal(srv.ListenAndServe())
+		listen = "localhost"
+		srv.Addr = listen + ":" + config.Port
 	}
+
+	logger.Info().
+		Str("hash", version.CommitHash).
+		Str("tag", version.CommitTag).
+		Str("port", config.Port).
+		Str("host", config.Hostname).
+		Str("iface", listen).
+		Bool("standalone", config.Standalone).
+		Bool("debug", config.Debug).
+		Msg("starting http server")
+	logger.Fatal().Err(srv.ListenAndServe()).Msg(strHttpServerPanic)
 }

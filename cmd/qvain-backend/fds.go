@@ -1,17 +1,16 @@
 package main
 
 import (
-	"log"
+	"errors"
 	"os"
 	"syscall"
 	"unsafe"
-
-	"errors"
 )
 
 // Call syscall.SYS_CAPGET for CAP_NET_BIND_SERVICE (= 10).
 // See also:
-//   https://github.com/syndtr/gocapability/.
+//   https://github.com/syndtr/gocapability/
+//   linux/kernel/capability.c
 // setcap cap_net_bind_service=+ep ./this
 
 const (
@@ -55,7 +54,7 @@ func callCapGet() (caps *capData, err error) {
 	// get version
 	_, _, errptr := syscall.Syscall(syscall.SYS_CAPGET, uintptr(unsafe.Pointer(hdr)), uintptr(unsafe.Pointer(data)), 0)
 	if errptr != 0 {
-		log.Println("callCapGet error:", errptr) // syscall.Errno, probably "invalid argument"
+		return nil, errptr // syscall.Errno, probably "invalid argument"
 	}
 
 	switch hdr.version {
@@ -102,15 +101,10 @@ func getOpenFDs() (int, error) {
 	return len(list), nil
 }
 
-func getRlimit() {
+func getRlimit() (uint64, uint64, error) {
 	var limit syscall.Rlimit
 	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &limit); err != nil {
-		log.Fatal("Getrlimit:" + err.Error())
+		return 0, 0, err
 	}
-	log.Printf("%v file descriptors out of a maximum of %v available\n", limit.Cur, limit.Max)
-	count, err := getOpenFDs()
-	if err != nil {
-		log.Fatal("can't count open FDs:" + err.Error())
-	}
-	log.Printf("open fds: %d\n", count)
+	return limit.Cur, limit.Max, nil
 }
