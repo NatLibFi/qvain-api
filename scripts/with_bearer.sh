@@ -3,7 +3,7 @@
 # -wvh- run curl with bearer token
 #
 
-TOKENGEN="go run ${HOME}/Code/GoPath/src/wvh/makejwt/main.go -token"
+TOKENGEN="go run ${HOME}/Code/GoPath/src/wvh/makejwt/main.go -token -aud $(hostname --fqdn)"
 TOKEN=""
 
 if [ -z "$1" ]; then
@@ -21,4 +21,4 @@ if [ -z ${TOKEN} ]; then
 fi
 
 
-curl -iH "Accept: application/json" -H "Authorization: Bearer ${TOKEN}" "${1}"
+curl -H "Accept: application/json" -H "Authorization: Bearer ${TOKEN}" "${@}"
