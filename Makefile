@@ -6,7 +6,7 @@
 
 GO := go
 CMDS := $(notdir $(wildcard cmd/*))
-BINDIR := $(PWD)/bin
+BINDIR := $(CURDIR)/bin
 DATADIRS := $(addprefix $(PWD)/,doc bench bin)
 SOURCELINK := ${GOBIN}/sourcelink
 
@@ -15,7 +15,7 @@ TAG := $(shell git describe --always 2>/dev/null)
 HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 REPO := $(shell git ls-remote --get-url 2>/dev/null)
-#REPOLINK := $(shell test -x $(SOURCELINK) && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo)
+REPOLINK := $(shell test -x $(SOURCELINK) && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo)
 VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./version)
 
 # collect VCS info for linker
@@ -35,9 +35,13 @@ $(CMDS): prebuild $(wildcard cmd/$@/*.go)
 	$(GO) build -o $(BINDIR)/$@ -ldflags $(LDFLAGS)
 
 # this doesn't actually use make but relies on the build cache in Go 1.10 to build only those files that have changed
+# TODO: what about data directories?
 install: listall
-	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) ./...
-	@echo $(DATADIRS)
+	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) ./cmd/...
+	@if test -n "$(INSTALL)"; then \
+		echo "installing to $(INSTALL):"; \
+		cp -auv $(BINDIR)/* $(INSTALL)/; \
+	fi
 
 # hack to run command from make command line goal arguments
 # NOTE: any clean-up lines after the command is run won't execute if the program is interrupted with SIGINT
@@ -68,7 +72,7 @@ $(SOURCELINK):
 	-go get -v github.com/wvh/sourcelink
 
 prebuild: $(SOURCELINK)
-	@$(eval REPOLINK=$(shell test -x ${GOBIN}/sourcelink && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo ""))
+	#@$(eval REPOLINK=$(shell test -x ${GOBIN}/sourcelink && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo ""))
 	@echo ran prebuild requirements
 
 release: all doc
