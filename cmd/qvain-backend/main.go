@@ -103,17 +103,21 @@ func main() {
 	}
 
 	config := &Config{
-		Hostname:      hostname,
-		Port:          env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
-		Standalone:    env.GetBool("APP_HTTP_STANDALONE"),
-		ForceHttpOnly: *forceHttpOnly,
-		Debug:         *appDebug,
-		Logger:        createAppLogger(*appDebug),
-		UseHttpErrors: useHttpErrors,
-		tokenKey:      key,
+		Hostname:         hostname,
+		Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+		Standalone:       env.GetBool("APP_HTTP_STANDALONE"),
+		ForceHttpOnly:    *forceHttpOnly,
+		Debug:            *appDebug,
+		Logger:           createAppLogger(*appDebug),
+		UseHttpErrors:    useHttpErrors,
+		tokenKey:         key,
+		oidcClientID:     env.Get("APP_OIDC_CLIENT_ID"),
+		oidcClientSecret: env.Get("APP_OIDC_CLIENT_SECRET"),
+		oidcProviderUrl:  env.Get("APP_OIDC_PROVIDER_URL"),
 	}
 
 	logger := config.NewLogger("main")
+	setStdlibLogger(config.NewLogger("log"))
 
 	if env.Get("APP_ENV_CHECK") == "" {
 		logger.Warn().Msg("environment variable APP_ENV_CHECK is not set")
@@ -132,7 +136,8 @@ func main() {
 
 	// add auth middleware
 	jwt := jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
-	authMux := jwt.MustToken(loggingMux)
+	//authMux := jwt.MustToken(loggingMux)
+	authMux := jwt.AppendUser(loggingMux)
 
 	// default server, without TLSConfig
 	srv := &http.Server{

@@ -47,6 +47,7 @@ func createAppLogger(isDebugging bool) (logger zerolog.Logger) {
 		logger = zerolog.New(out).With().Timestamp().Logger()
 	}
 	log.Logger = logger
+
 	return logger
 }
 
@@ -54,4 +55,10 @@ func createAppLogger(isDebugging bool) (logger zerolog.Logger) {
 // The returned log.Logger can be passed to libraries that require a stdlib logger.
 func adaptToStdlibLogger(logger zerolog.Logger) *stdlog.Logger {
 	return stdlog.New(logger, "", 0)
+}
+
+// setStdlibLogger sets zerolog as output for anything that may use the stdlib logger.
+func setStdlibLogger(logger zerolog.Logger) {
+	stdlog.SetFlags(0)
+	stdlog.SetOutput(logger)
 }

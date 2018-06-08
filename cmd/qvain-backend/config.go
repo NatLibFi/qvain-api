@@ -13,8 +13,13 @@ type Config struct {
 	Debug         bool
 	UseHttpErrors bool
 	Logger        zerolog.Logger
-	tokenKey      []byte
-	db            *psql.DB
+
+	tokenKey         []byte
+	oidcClientID     string
+	oidcClientSecret string
+	oidcProviderUrl  string
+
+	db *psql.DB
 }
 
 func (config *Config) NewLogger(name string) zerolog.Logger {
