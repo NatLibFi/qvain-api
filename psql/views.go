@@ -18,7 +18,11 @@ func (db *DB) ViewByOwner(owner uuid.UUID) (json.RawMessage, error) {
 	err := db.pool.QueryRow(`
 		SELECT json_agg(result) "by_owner"
 		FROM (
-			SELECT id, owner, created, modified, blob#>'{research_dataset,title}' title, blob#>'{research_dataset,description}' description, blob#>'{preservation_state}' preservation_state
+			SELECT id, owner, created, modified, published,
+				blob#>'{research_dataset,identifier}' identifier,
+				blob#>'{research_dataset,title}' title,
+				blob#>'{research_dataset,description}' description,
+				blob#>'{preservation_state}' preservation_state
 			FROM datasets
 			WHERE owner = $1
 		) result

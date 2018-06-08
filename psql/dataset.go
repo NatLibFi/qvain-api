@@ -278,6 +278,42 @@ func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	return res, nil
 }
 
+func (db *DB) GetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx.get(id)
+}
+
+func (tx *Tx) get(id uuid.UUID) (*models.Dataset, error) {
+	var (
+		family *int
+		schema *string
+		blob   []byte
+	)
+
+	res := new(models.Dataset)
+	err := tx.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	err = res.SetData(*family, *schema, blob)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	var list []*models.Dataset
 

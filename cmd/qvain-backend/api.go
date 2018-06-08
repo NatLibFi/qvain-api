@@ -164,7 +164,7 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !ok {
-		jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 
@@ -320,6 +320,10 @@ func (api *DatasetRouter) patchDataset(w http.ResponseWriter, r *http.Request, u
 
 func PatchDataset(id uuid.UUID) error {
 	return nil
+}
+
+func (api *DatasetRouter) ViewDatasets(w http.ResponseWriter, r *http.Request, user uuid.UUID) {
+
 }
 
 // ChangeOwner sets the owner to another allowed UUID value, either the user's own or one of the user's groups.
