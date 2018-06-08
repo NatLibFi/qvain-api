@@ -5,25 +5,26 @@ This auto-generated document lists all imports and indirect package dependencies
 
 ### Imports (directly imported packages)
 
+	github.com/coreos/go-oidc
 	github.com/felixge/httpsnoop
 	github.com/garyburd/redigo/redis
-	github.com/gorilla/websocket
 	github.com/jackc/pgx
 	github.com/lestrrat/go-jwx/jwa
 	github.com/lestrrat/go-jwx/jwt
 	github.com/mattn/go-isatty
-	github.com/patrickmn/go-cache
 	github.com/rs/zerolog
 	github.com/rs/zerolog/log
 	github.com/tidwall/gjson
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
+	golang.org/x/net/context
+	golang.org/x/oauth2
 
 ### Dependencies (packages required by imported packages)
 
+	github.com/coreos/go-oidc
 	github.com/felixge/httpsnoop
 	github.com/garyburd/redigo/redis
-	github.com/gorilla/websocket
 	github.com/jackc/pgx
 	github.com/jackc/pgx/chunkreader
 	github.com/jackc/pgx/internal/sanitize
@@ -40,8 +41,9 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/lestrrat/go-jwx/jwt
 	github.com/lestrrat/go-pdebug
 	github.com/mattn/go-isatty
-	github.com/patrickmn/go-cache
 	github.com/pkg/errors
+	github.com/pquerna/cachecontrol
+	github.com/pquerna/cachecontrol/cacheobject
 	github.com/rs/zerolog
 	github.com/rs/zerolog/internal/json
 	github.com/rs/zerolog/log
@@ -49,6 +51,14 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/tidwall/match
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
+	golang.org/x/crypto/ed25519
+	golang.org/x/crypto/ed25519/internal/edwards25519
+	golang.org/x/net/context
+	golang.org/x/net/context/ctxhttp
+	golang.org/x/oauth2
+	gopkg.in/square/go-jose.v2
+	gopkg.in/square/go-jose.v2/cipher
+	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2018-05-29 at commit 85c0e0e by make_go_dependencies_list.sh
+generated on 2018-06-08 at commit e94f09e by make_go_dependencies_list.sh

@@ -3,15 +3,20 @@
 # -wvh- automatically generate a list of Go package dependencies for documentation purposes
 #
 
-OUTFILE="go_dependencies.md"
-BASEDIR=".."
+OUTFILE="doc/go_dependencies.md"
+BASEDIR=$(dirname ${0})/..
 CODEBLOCK='```'
 PREFIXCMD='sed s/^/\t/'
 
 set -e
 
-if [ ! -e ${0##*/} ]; then
-	echo "$0: error: please run this script from its containing directory"
+#if [ ! -e ${0##*/} ]; then
+#	echo "$0: error: please run this script from its containing directory"
+#	exit 1
+#fi
+
+if [ ! -e ${BASEDIR}/doc ]; then
+	echo "$0: error: can't find doc/ folder in this script's parent directory"
 	exit 1
 fi
 
