@@ -8,15 +8,15 @@ var templates = map[string]json.RawMessage{
 	"metax-ida": json.RawMessage(`
 		{
 			"data_catalog": "urn:nbn:fi:att:data-catalog-ida",
-			"metadata_provider_org": "trump corporation",
-			"metadata_provider_user": "donald_trump",
+			"metadata_provider_org": "",
+			"metadata_provider_user": "",
 			"research_dataset": {}
 		}`),
 	"metax-att": json.RawMessage(`
 		{
 		"data_catalog": "urn:nbn:fi:att:data-catalog-att",
-		"metadata_provider_org": "trump corporation",
-		"metadata_provider_user": "donald_trump",
+		"metadata_provider_org": "",
+		"metadata_provider_user": "",
 		"research_dataset": {}
 	}`),
 }

@@ -4,8 +4,30 @@ import (
 	"github.com/wvh/uuid"
 )
 
-// CreateIdentity creates a user and links the external id to our own uuid.
-func (db *DB) CreateAndGetIdentity(id string) (uuid.UUID, error) {
+// CreateIdentity creates an external identity. It does nothing if the external identity exists already.
+func (db *DB) CreateIdentity(id string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	provisionalUuid, err := uuid.NewUUID()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`INSERT INTO users (uid, extid) VALUES ($2, $1) ON CONFLICT (extid) DO NOTHING`, id, provisionalUuid)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+
+// CreateOrGetIdentity creates an external identity if it doesn't exist already and returns the internal UUID id.
+func (db *DB) CreateOrGetIdentity(id string) (uuid.UUID, error) {
 	var newUuid uuid.UUID
 
 	tx, err := db.Begin()

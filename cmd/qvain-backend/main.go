@@ -91,7 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// get token key
+	// get token key; refuse to start without one
 	key, err := getTokenKey()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "invalid token key:", err)
@@ -101,6 +101,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "fatal: no token key set in environment")
 		os.Exit(1)
 	}
+
+	// From here on we don't exit anymore
 
 	config := &Config{
 		Hostname:         hostname,

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/wvh/uuid"
+	"github.com/NatLibFi/qvain-api/models"
 )
 
 // apiEmptyList ensures an array is returned even if there are no results.
@@ -43,6 +44,71 @@ func (db *DB) ViewByOwner(owner uuid.UUID) (json.RawMessage, error) {
 	}
 
 	return result, nil
+}
+
+func (db *DB) ViewDatasetWithOwner(id uuid.UUID, owner uuid.UUID) (json.RawMessage, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	famId, err := tx.getFamily(id)
+	if err != nil {
+		return nil, err
+	}
+
+	family, err := models.LookupFamily(famId)
+	if err != nil {
+		return nil, err
+	}
+
+	if family.IsPartial() {
+		return tx.viewDataset(id, family.Key())
+	}
+	return tx.viewDataset(id, "")
+}
+
+func (tx *Tx) viewDataset(id uuid.UUID, key string) (json.RawMessage, error) {
+	var (
+		record json.RawMessage
+		err error
+	)
+
+	// annoyingly similar...
+	if key == "" {
+		err = tx.QueryRow(`
+		SELECT row_to_json(result) "record"
+		FROM (
+			SELECT id, created, modified, pulled, pushed, published,
+				family AS type, schema, blob AS dataset,
+				(SELECT extid FROM identities WHERE uid = creator) AS creator,
+				(SELECT extid FROM identities WHERE uid = owner) AS owner
+			FROM datasets
+			WHERE id = $1) result
+		`, id.Array()).Scan(&record)
+	} else {
+		err = tx.QueryRow(`
+		SELECT row_to_json(result) "record"
+		FROM (
+			SELECT id, created, modified, pulled, pushed, published,
+				family AS type, schema, blob#>$2 AS dataset,
+				(SELECT extid FROM identities WHERE uid = creator) AS creator,
+				(SELECT extid FROM identities WHERE uid = owner) AS owner
+			FROM datasets
+			WHERE id = $1) result
+		`, id.Array(), []string{key}).Scan(&record)
+	}
+	if err != nil {
+		return nil, handleError(err)
+	}
+
+	return record, nil
 }
 
 func (db *DB) ExportAsJson(id uuid.UUID) (json.RawMessage, error) {

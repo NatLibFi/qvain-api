@@ -21,6 +21,20 @@ type SchemaFamily struct {
 	publicPaths []string
 }
 
+// IsPartial returns a boolean indicating if this is a dataset that is only partially shown to the API.
+func (fam *SchemaFamily) IsPartial() bool {
+	// nil slice also has len 0
+	return len(fam.publicPaths) > 0
+}
+
+// Key returns the key containing the partial dataset; the first element of the publicPaths slice.
+func (fam *SchemaFamily) Key() string {
+	if len(fam.publicPaths) > 0 {
+		return fam.publicPaths[0]
+	}
+	return ""
+}
+
 // IsPathPublic returns a boolean indicating if the dataset's subkey can be shown via API.
 // A nil path list means no restrictions.
 func (fam *SchemaFamily) IsPathPublic(p string) bool {

@@ -1,8 +1,12 @@
 package models
 
 import (
+	"errors"
+
 	"github.com/wvh/uuid"
 )
+
+var ErrInvalidFamily = errors.New("Invalid dataset type")
 
 var privateTypeRegistry *TypeRegistry
 
@@ -24,11 +28,11 @@ func (reg *TypeRegistry) Register(id int, name string, newFunc NewFunc, loadFunc
 	}
 }
 
-func (reg *TypeRegistry) Lookup(id int) *SchemaFamily {
+func (reg *TypeRegistry) Lookup(id int) (*SchemaFamily, error) {
 	if t, e := reg.tmap[id]; e {
-		return t
+		return t, nil
 	}
-	return nil
+	return nil, ErrInvalidFamily
 }
 
 func init() {
@@ -46,7 +50,7 @@ func RegisterFamily(id int, name string, newFunc NewFunc, loadFunc LoadFunc, pat
 }
 
 // LookupFamily looks up a dataset type from the global registry.
-func LookupFamily(id int) *SchemaFamily {
+func LookupFamily(id int) (*SchemaFamily, error) {
 	return privateTypeRegistry.Lookup(id)
 }
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"net/http"
 	"path"
@@ -10,89 +10,30 @@ import (
 	"github.com/NatLibFi/qvain-api/jwt"
 	"github.com/NatLibFi/qvain-api/models"
 	"github.com/NatLibFi/qvain-api/psql"
-	"github.com/NatLibFi/qvain-api/version"
 	"github.com/wvh/uuid"
+	"github.com/rs/zerolog"
 	//"encoding/json"
+
+	// side-effect
+	_ "github.com/NatLibFi/qvain-api/metax"
 )
-
-/*
-var fakeDatasetMap = map[uuid.UUID]string{
-	uuid.MustFromString("12345678901234567890123456789012"): "this is fake dataset 12345678901234567890123456789012",
-	uuid.MustFromString("66666666666666666666666666666666"): "this is fake dataset 66666666666666666666666666666666",
-	uuid.MustFromString("00000000000000000000000000000001"): "this is fake dataset 00000000000000000000000000000001",
-}
-*/
-var owner = uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18")
-
-var fakeDatasets = []*models.Dataset{
-	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
-	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
-	{Id: uuid.MustFromString("12345678901234567890123456789012"), Creator: owner, Owner: owner},
-	{Id: uuid.MustFromString("056bffbcc41edad4853bea9100000001"), Creator: owner, Owner: owner},
-}
-
-var fakeDatasetMap map[uuid.UUID]*models.Dataset
-
-func init() {
-	fakeDatasetMap = make(map[uuid.UUID]*models.Dataset)
-	for _, dataset := range fakeDatasets {
-		fakeDatasetMap[dataset.Id] = dataset
-	}
-}
-
-func checkDatasetExists(id uuid.UUID) bool {
-	_, e := fakeDatasetMap[id]
-	return e
-}
-
-/*
-func needsDataset(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("doc") == "" {
-			//http.Error(w, "missing dataset id", http.StatusUnauthorized)
-			jsonError(w, "missing dataset id", http.StatusBadRequest)
-			return
-		}
-		if !checkDatasetExists(r.URL.Query().Get("doc")) {
-			jsonError(w, "dataset not found", http.StatusNotFound)
-			return
-		}
-
-		h.ServeHTTP(w, r)
-	})
-}
-*/
-
-func apiDatasetCollection(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte(http.MethodGet))
-	case http.MethodPost:
-		w.Write([]byte(http.MethodPost))
-	case http.MethodPut:
-		w.Write([]byte(http.MethodPut))
-	case http.MethodDelete:
-		w.Write([]byte(http.MethodDelete))
-	default:
-		//http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Write([]byte("done\n"))
-}
 
 type DatasetRouter struct {
 	mountedAt string
 	db        *psql.DB
+	logger    zerolog.Logger
 }
 
-func NewDatasetRouter(mountPoint string, db *psql.DB) *DatasetRouter {
-	return &DatasetRouter{mountedAt: path.Clean(mountPoint) + "/", db: db}
+func NewDatasetRouter(mountPoint string, db *psql.DB, logger zerolog.Logger) *DatasetRouter {
+	return &DatasetRouter{mountedAt: path.Clean(mountPoint) + "/", db: db, logger: logger}
 }
 
 func (api *DatasetRouter) Mountpoint() string {
 	return api.mountedAt
+}
+
+func (api *DatasetRouter) urlForDataset(id uuid.UUID) string {
+	return api.mountedAt + id.String()
 }
 
 func (api *DatasetRouter) Root(r *http.Request) string {
@@ -104,6 +45,13 @@ func (api *DatasetRouter) Root(r *http.Request) string {
 
 func (api *DatasetRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.Datasets(w, r)
+}
+
+func (api *DatasetRouter) Created(w http.ResponseWriter, r *http.Request, id uuid.UUID) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	http.Redirect(w, r, api.urlForDataset(id), http.StatusCreated)
+	fmt.Fprintf(w, `{"code":%d,"message":"%s","id":"%s"}}%c`, http.StatusCreated, "created", id.String(), '\n')
 }
 
 func head(p string) string {
@@ -155,6 +103,7 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// require authentication from here on
 	var user uuid.UUID
 	token, ok := jwt.FromContext(r.Context())
 	if ok {
@@ -171,12 +120,7 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 	// handle self
 	if root == "" {
 		switch r.Method {
-		/*
-			case http.MethodGet:
-				w.Write([]byte(http.MethodGet))
-		*/
 		case http.MethodPost:
-			//w.Write([]byte(http.MethodPost))
 			api.createDataset(w, r, user)
 		default:
 			jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
@@ -198,11 +142,6 @@ func (api *DatasetRouter) Datasets(w http.ResponseWriter, r *http.Request) {
 
 // Dataset handles requests for a dataset by UUID. It dispatches to request method specific handlers.
 func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, user uuid.UUID, id uuid.UUID) {
-	if _, e := fakeDatasetMap[id]; !e {
-		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
 	path := cuthead(strings.TrimPrefix(r.URL.Path, api.mountedAt))
 
 	switch r.Method {
@@ -218,7 +157,7 @@ func (api *DatasetRouter) Dataset(w http.ResponseWriter, r *http.Request, user u
 	case http.MethodDelete:
 		w.Write([]byte(http.MethodDelete))
 	case http.MethodPatch:
-		api.patchDataset(w, r, user, id)
+		//api.patchDataset(w, r, user, id)
 		return
 
 	default:
@@ -242,18 +181,25 @@ func (api *DatasetRouter) getDataset(w http.ResponseWriter, r *http.Request, use
 		return
 	}
 
-	// determine what sort of dataset family we're dealing with
-	//if fam, found := models.LookupFamily(2); found {
-	if fam := models.LookupFamily(2); fam != nil {
-		fmt.Println("found fam:", fam.Name)
-		// this part of the dataset is not public
-		if !fam.IsPathPublic(path) {
-			jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+	//res, err := api.db.SmartGetWithOwner(id, user)
+	res, err := api.db.ViewDatasetWithOwner(id, user)
+	if err != nil {
+		if err == psql.ErrNotOwner {
+			jsonError(w, err.Error(), http.StatusForbidden)
+			return
+		} else if err == psql.ErrNotFound {
+			jsonError(w, err.Error(), http.StatusNotFound)
 			return
 		}
-	}
-	// else: panic?
 
+		jsonError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Write(res)
+	return
 }
 
 func (api *DatasetRouter) createDataset(w http.ResponseWriter, r *http.Request, creator uuid.UUID) {
@@ -269,118 +215,32 @@ func (api *DatasetRouter) createDataset(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	decoder := json.NewDecoder(r.Body)
-	var blob json.RawMessage
-	err = decoder.Decode(&blob)
 	defer r.Body.Close()
-	if err != nil {
-		//jsonError(w, err.Error(), 500)
-		jsonError(w, "invalid json", http.StatusBadRequest)
-		return
-	}
-	r.Body.Close()
 
-	dataset, err := models.NewDataset(creator)
+	typed, err := models.CreateDatasetFromJson(creator, r.Body)
 	if err != nil {
-		jsonError(w, err.Error(), http.StatusInternalServerError)
+		api.logger.Error().Err(err).Msg("create dataset failed")
+		jsonError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	dataset.SetData(2, "metax", blob)
+	// TODO: Add Fairdata IdP information
+	/*
+	var identity, organisation string
+	if token, ok := jwt.FromContext(r.Context()); ok {
+		identity = token.Subject()
+		if v, ok := token.Get(`Organisation`); ok {
+			organisation = v.(string)
+		}
+	}
+	*/
 
-	err = api.db.Store(dataset)
+	err = api.db.Store(typed.Unwrap())
 	if err != nil {
 		jsonError(w, "store failed", http.StatusBadRequest)
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("%s %d\n", creator, r.ContentLength)))
+	api.Created(w, r, typed.Unwrap().Id)
 	return
-}
-
-//func (api *DatasetRouter) putDataset()
-
-// patchDataset allows changing a dataset's top fields.
-func (api *DatasetRouter) patchDataset(w http.ResponseWriter, r *http.Request, user uuid.UUID, id uuid.UUID) {
-	w.Write([]byte(http.MethodPatch))
-
-	decoder := json.NewDecoder(r.Body)
-	var t = struct {
-		Owner   uuid.UUID `json:"owner"`
-		Creator uuid.UUID `json:"creator"`
-	}{}
-	err := decoder.Decode(&t)
-	if err != nil {
-		jsonError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	defer r.Body.Close()
-	fmt.Println(t.Owner)
-}
-
-func PatchDataset(id uuid.UUID) error {
-	return nil
-}
-
-func (api *DatasetRouter) ViewDatasets(w http.ResponseWriter, r *http.Request, user uuid.UUID) {
-
-}
-
-// ChangeOwner sets the owner to another allowed UUID value, either the user's own or one of the user's groups.
-// This is a higher-level function that is not in the model since the storage layer is not aware of group memberships.
-func ChangeOwner(id, owner uuid.UUID) error {
-	fmt.Printf("changing owner for dataset %s to %s\n", id, owner)
-	return nil
-}
-
-func ViewMetadata(w http.ResponseWriter, r *http.Request, id string) {
-
-}
-
-// apiHello catches all requests to the bare api endpoint.
-func apiHello(w http.ResponseWriter, r *http.Request) {
-	if r.RequestURI != "/api" && r.RequestURI != "/api/" {
-		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-		return
-	}
-
-	if r.Method != "GET" {
-		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`"` + version.Id + ` api"` + "\n"))
-}
-
-// apiVersion returns the version information that was (hopefully) linked in at build time.
-func apiVersion(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("ETag", `"`+version.CommitHash+`"`)
-	fmt.Fprintf(w, `{"name":"%s","description":"%s","version":"%s","tag":"%s","hash":"%s","repo":"%s"}%c`, version.Name, version.Description, version.SemVer, version.CommitTag, version.CommitHash, version.CommitRepo, '\n')
-}
-
-func apiDatabaseCheck(db *psql.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "GET" {
-			jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-			return
-		}
-
-		err := db.Check()
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			//w.WriteHeader()
-			fmt.Fprintf(w, `{"alive":false,"error":"%s"}%c`, err, '\n')
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"alive":true}` + "\n"))
-	})
 }

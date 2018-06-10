@@ -32,8 +32,8 @@ func handleError(err error) error {
 	// pgx/postgres error
 	if pgerr, ok := err.(pgx.PgError); ok {
 		switch pgerr.Code {
-		case "22P02":
-			return ErrInvalidJson
+		//case "22P02":
+		//	return ErrInvalidJson
 		case "23503":
 			return ErrExists
 		case "23505":

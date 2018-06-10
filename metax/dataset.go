@@ -16,7 +16,7 @@ const MetaxDatasetFamily = 2
 var noRecords []MetaxRecord
 
 func init() {
-	models.RegisterFamily(2, "metax", NewMetaxDataset, LoadMetaxDataset, []string{"research_metadata", "contracts"})
+	models.RegisterFamily(2, "metax", NewMetaxDataset, LoadMetaxDataset, []string{"research_dataset", "contracts"})
 }
 
 type MetaxDataset struct {

@@ -20,8 +20,9 @@ type Dataset struct {
 	Created  time.Time
 	Modified time.Time
 
-	Pushed time.Time
-	Pulled time.Time
+	Pushed    time.Time
+	Pulled    time.Time
+	Published bool
 
 	family int
 	schema string

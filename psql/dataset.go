@@ -7,7 +7,6 @@ import (
 	"github.com/wvh/uuid"
 	"log"
 	"time"
-	//"github.com/jackc/pgx"
 )
 
 func (db *DB) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
@@ -189,6 +188,78 @@ func (tx *Tx) patch(id uuid.UUID, blob []byte) error {
 	return nil
 }
 
+func (db *DB) SmartGetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	famId, err := tx.getFamily(id)
+	if err != nil {
+		return nil, err
+	}
+
+	family, err := models.LookupFamily(famId)
+	if err != nil {
+		return nil, err
+	}
+
+	if family.IsPartial() {
+		return tx.get(id, family.Key())
+	}
+	return tx.get(id, "")
+}
+
+func (db *DB) SmartUpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.checkOwner(id, owner)
+	if err != nil {
+		return err
+	}
+
+	famId, err := tx.getFamily(id)
+	if err != nil {
+		return err
+	}
+
+	family, err := models.LookupFamily(famId)
+	if err != nil {
+		return err
+	}
+
+	if family.IsPartial() {
+		err = tx.patch(id, blob)
+	} else {
+		err = tx.update(id, blob)
+	}
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+func (tx *Tx) getFamily(id uuid.UUID) (int, error) {
+	var fam int
+	err := tx.QueryRow("SELECT family FROM datasets WHERE id = $1", id.Array()).Scan(&fam)
+	if err != nil {
+		return 0, handleError(err)
+	}
+
+	return fam, nil
+}
+
 // checkOwner returns an error if the record is not owned by the given user.
 func (tx *Tx) checkOwner(id uuid.UUID, owner uuid.UUID) error {
 	var isOwner bool
@@ -290,18 +361,24 @@ func (db *DB) GetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset, erro
 		return nil, err
 	}
 
-	return tx.get(id)
+	return tx.get(id, "")
 }
 
-func (tx *Tx) get(id uuid.UUID) (*models.Dataset, error) {
+func (tx *Tx) get(id uuid.UUID, key string) (*models.Dataset, error) {
 	var (
 		family *int
 		schema *string
 		blob   []byte
+
+		err error
 	)
 
 	res := new(models.Dataset)
-	err := tx.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	if key == "" {
+		err = tx.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	} else {
+		err = tx.QueryRow(`select id, creator, owner, family, schema, blob#>$2 from datasets where id=$1`, id.Array(), []string{key}).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	}
 	if err != nil {
 		return nil, handleError(err)
 	}

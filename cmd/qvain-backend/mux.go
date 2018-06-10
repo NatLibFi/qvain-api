@@ -51,7 +51,7 @@ func makeMux(config *Config) *http.ServeMux {
 	}
 
 	// dataset endpoints
-	dsRouter := NewDatasetRouter("/api/dataset/", config.db)
+	dsRouter := NewDatasetRouter("/api/dataset/", config.db, config.NewLogger("dataset"))
 	mux.Handle("/api/dataset/", dsRouter)
 
 	// views

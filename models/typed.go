@@ -3,14 +3,17 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"io"
 
 	"github.com/wvh/uuid"
 )
 
 var (
-	ErrInvalidDatasetType = errors.New("invalid dataset type")
 	ErrIdMissing          = errors.New("missing dataset id")
 	ErrIdPresent          = errors.New("dataset already has id")
+	ErrDatasetTypeMissing = errors.New("dataset type is missing")
+	ErrSchemaMissing      = errors.New("schema identifier is missing")
+	ErrDatasetMissing     = errors.New("dataset is missing or empty")
 )
 
 // TypedDataset is a wrapper around a base dataset that allows different dataset types to fondle the data in ways that pleases them.
@@ -21,18 +24,21 @@ type TypedDataset interface {
 }
 
 // CreateDatasetFromJson creates a typed dataset with JSON data originating from the web API.
-func CreateDatasetFromJson(creator uuid.UUID, data []byte) (TypedDataset, error) {
+// Caller closes body.
+func CreateDatasetFromJson(creator uuid.UUID, data io.Reader) (TypedDataset, error) {
+	decoder := json.NewDecoder(data)
+
 	// partially decode json
 	aux := &struct {
 		Id *uuid.UUID `json:"id"`
 
-		Family int              `json:"family"`
-		Schema string           `json:"schema"`
+		Family *int             `json:"type"`
+		Schema *string          `json:"schema"`
 		Blob   *json.RawMessage `json:"dataset"`
 
 		Valid bool `json:"valid"`
 	}{}
-	err := json.Unmarshal(data, aux)
+	err := decoder.Decode(aux)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +47,21 @@ func CreateDatasetFromJson(creator uuid.UUID, data []byte) (TypedDataset, error)
 		return nil, ErrIdPresent
 	}
 
-	fam := LookupFamily(aux.Family)
-	if fam == nil {
-		return nil, ErrInvalidDatasetType
+	if aux.Family == nil {
+		return nil, ErrDatasetTypeMissing
+	}
+
+	if aux.Schema == nil {
+		return nil, ErrSchemaMissing
+	}
+
+	if aux.Blob == nil || len(*aux.Blob) == 0 {
+		return nil, ErrDatasetMissing
+	}
+
+	fam, err := LookupFamily(*aux.Family)
+	if err != nil {
+		return nil, err
 	}
 
 	typed, err := fam.NewFunc(creator)
@@ -51,7 +69,7 @@ func CreateDatasetFromJson(creator uuid.UUID, data []byte) (TypedDataset, error)
 		return nil, err
 	}
 
-	err = typed.CreateData(aux.Family, aux.Schema, *aux.Blob)
+	err = typed.CreateData(*aux.Family, *aux.Schema, *aux.Blob)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +97,9 @@ func UpdateDatasetFromJson(owner uuid.UUID, data []byte) (TypedDataset, error) {
 		return nil, ErrIdMissing
 	}
 
-	fam := LookupFamily(aux.Family)
-	if fam == nil {
-		return nil, ErrInvalidDatasetType
+	fam, err := LookupFamily(aux.Family)
+	if err != nil {
+		return nil, ErrInvalidFamily
 	}
 
 	typed := fam.LoadFunc(&Dataset{
