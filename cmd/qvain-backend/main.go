@@ -74,48 +74,54 @@ func init() {
 	logger = appLogger.With().Str("component", "main").Logger()
 }
 */
+var (
+	appDebug      = flag.Bool("d", env.GetBool("APP_DEBUG"), "set debugging mode (env APP_DEBUG)")
+	forceHttpOnly = flag.Bool("http", env.GetBool("APP_FORCE_HTTP_SCHEME"), "force links to http:// (env APP_FORCE_HTTP_SCHEME)")
+)
 
 func main() {
-	var (
-		appDebug      = flag.Bool("d", env.GetBool("APP_DEBUG"), "set debugging mode (env APP_DEBUG)")
-		forceHttpOnly = flag.Bool("http", env.GetBool("APP_FORCE_HTTP_SCHEME"), "force links to http:// (env APP_FORCE_HTTP_SCHEME)")
-
-		useHttpErrors = env.GetBool("APP_HTTP_ERRORS")
-	)
 	flag.Parse()
 
-	// get hostname; refuse to start without one
-	hostname, err := getHostname()
+	/*
+		// get hostname; refuse to start without one
+		hostname, err := getHostname()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "can't get hostname:", err)
+			os.Exit(1)
+		}
+
+		// get token key; refuse to start without one
+		key, err := getTokenKey()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "invalid token key:", err)
+			os.Exit(1)
+		}
+		if len(key) < 1 {
+			fmt.Fprintln(os.Stderr, "fatal: no token key set in environment")
+			os.Exit(1)
+		}
+		// From here on we don't exit anymore
+
+		config := &Config{
+			Hostname:         hostname,
+			Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+			Standalone:       env.GetBool("APP_HTTP_STANDALONE"),
+			ForceHttpOnly:    *forceHttpOnly,
+			Debug:            *appDebug,
+			Logger:           createAppLogger(*appDebug),
+			UseHttpErrors:    useHttpErrors,
+			tokenKey:         key,
+			oidcClientID:     env.Get("APP_OIDC_CLIENT_ID"),
+			oidcClientSecret: env.Get("APP_OIDC_CLIENT_SECRET"),
+			oidcProviderUrl:  env.Get("APP_OIDC_PROVIDER_URL"),
+		}
+	*/
+
+	// configure application from environment; exit if there was an error
+	config, err := ConfigFromEnv()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "can't get hostname:", err)
+		fmt.Fprintln(os.Stderr, "fatal:", err)
 		os.Exit(1)
-	}
-
-	// get token key; refuse to start without one
-	key, err := getTokenKey()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "invalid token key:", err)
-		os.Exit(1)
-	}
-	if len(key) < 1 {
-		fmt.Fprintln(os.Stderr, "fatal: no token key set in environment")
-		os.Exit(1)
-	}
-
-	// From here on we don't exit anymore
-
-	config := &Config{
-		Hostname:         hostname,
-		Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
-		Standalone:       env.GetBool("APP_HTTP_STANDALONE"),
-		ForceHttpOnly:    *forceHttpOnly,
-		Debug:            *appDebug,
-		Logger:           createAppLogger(*appDebug),
-		UseHttpErrors:    useHttpErrors,
-		tokenKey:         key,
-		oidcClientID:     env.Get("APP_OIDC_CLIENT_ID"),
-		oidcClientSecret: env.Get("APP_OIDC_CLIENT_SECRET"),
-		oidcProviderUrl:  env.Get("APP_OIDC_PROVIDER_URL"),
 	}
 
 	logger := config.NewLogger("main")

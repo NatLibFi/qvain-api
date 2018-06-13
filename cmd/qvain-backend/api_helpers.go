@@ -1,13 +1,13 @@
 package main
 
 import (
-	"net/http"
 	"fmt"
+	"net/http"
 	"strings"
 	//"encoding/json"
 
-	"github.com/NatLibFi/qvain-api/version"
 	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/version"
 )
 
 // jsonError generates an HTTP error but in json format.

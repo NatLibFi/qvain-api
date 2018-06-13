@@ -10,8 +10,8 @@ import (
 	"github.com/NatLibFi/qvain-api/jwt"
 	"github.com/NatLibFi/qvain-api/models"
 	"github.com/NatLibFi/qvain-api/psql"
-	"github.com/wvh/uuid"
 	"github.com/rs/zerolog"
+	"github.com/wvh/uuid"
 	//"encoding/json"
 
 	// side-effect
@@ -226,13 +226,13 @@ func (api *DatasetRouter) createDataset(w http.ResponseWriter, r *http.Request, 
 
 	// TODO: Add Fairdata IdP information
 	/*
-	var identity, organisation string
-	if token, ok := jwt.FromContext(r.Context()); ok {
-		identity = token.Subject()
-		if v, ok := token.Get(`Organisation`); ok {
-			organisation = v.(string)
+		var identity, organisation string
+		if token, ok := jwt.FromContext(r.Context()); ok {
+			identity = token.Subject()
+			if v, ok := token.Get(`Organisation`); ok {
+				organisation = v.(string)
+			}
 		}
-	}
 	*/
 
 	err = api.db.Store(typed.Unwrap())

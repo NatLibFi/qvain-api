@@ -32,7 +32,7 @@ func NewLoginHandler(logger zerolog.Logger, needsHashMode bool) *LoginHandler {
 
 func (lh *LoginHandler) Callback(w http.ResponseWriter, r *http.Request) {
 	//w.Write([]byte("Welcome to the cb url.\n"))
-	fmt.Printf("\n%#v\n%+v\n\n", r.URL)
+	fmt.Printf("\n%#v\n", r.URL)
 
 	q := r.URL.Query()
 	if q.Get("id_token") == "" {
