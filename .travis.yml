@@ -4,4 +4,6 @@ go:
   - "1.9.x"
   - "1.x"
 
+install: go get -t ./cmd/...
+
 script: go build ./cmd/...
