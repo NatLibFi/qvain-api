@@ -89,7 +89,7 @@ func (client *OidcClient) Auth() http.HandlerFunc {
 		})
 		client.logger.Debug().Str("state", state).Msg("redirect to IdP")
 		//log.Println("redirect:", client.oauthConfig.AuthCodeURL(client.state))
-		http.Redirect(w, r, client.oauthConfig.AuthCodeURL(client.state), http.StatusFound)
+		http.Redirect(w, r, client.oauthConfig.AuthCodeURL(state), http.StatusFound)
 	}
 }
 
