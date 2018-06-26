@@ -40,7 +40,7 @@ install: listall
 	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) ./cmd/...
 	@if test -n "$(INSTALL)"; then \
 		echo "installing to $(INSTALL):"; \
-		cp -auv $(BINDIR)/* $(INSTALL)/; \
+		cp -auvf $(BINDIR)/* $(INSTALL)/; \
 	fi
 
 # hack to run command from make command line goal arguments
