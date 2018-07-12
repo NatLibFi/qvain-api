@@ -77,7 +77,7 @@ clean:
 
 # generate dependency list
 doc: doc/go_dependencies.md
-	@cd doc && ./make_go_dependencies_list.sh
+	scripts/make_go_dependencies_list.sh
 
 # minify templates
 #minify: $(MIN_FILES) $(MIN_FILES:.html=.min.html)
