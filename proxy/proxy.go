@@ -1,16 +1,14 @@
 package proxy
 
 import (
-	"fmt"
-	"io/ioutil"
-	"log"
+	"encoding/base64"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
-	"time"
 	"sync"
-	"encoding/base64"
+	"time"
 )
 
 const BufferSize = 8192
@@ -37,7 +35,6 @@ func (b *bufferPool) Put(buf []byte) {
 	b.pool.Put(buf)
 }
 
-
 func NewSingleHostReverseProxy(target *url.URL, opts ...proxyOption) *httputil.ReverseProxy {
 	config := new(proxyConfig)
 
@@ -55,46 +52,52 @@ func NewSingleHostReverseProxy(target *url.URL, opts ...proxyOption) *httputil.R
 		//req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
 		req.URL.Path = target.Path + req.URL.Path
 
+		// combine query values
 		if targetQuery == "" || req.URL.RawQuery == "" {
 			req.URL.RawQuery = targetQuery + req.URL.RawQuery
 		} else {
 			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
 		}
 
-		req.Header.Set("User-Agent", config.UserAgent)
+		// get rid of the original request's user-agent
+		if config.UserAgent != "" {
+			req.Header.Set("User-Agent", config.UserAgent)
+		} else {
+			req.Header.Del("User-Agent")
+		}
+
+		// add auth creds if necessary
 		if config.AuthHeader != "" {
 			req.Header.Set("Authorization", config.AuthHeader)
 		}
 
 		req.Host = target.Host
-		fmt.Printf("sent: %+v\n", req)
+		//log.Printf("sent: %+v", req)
+	}
+
+	// shorter timeouts and higher per-host concurrency
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout: 10 * time.Second,
+			//Timeout:   20 * time.Millisecond,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:        16,
+		MaxIdleConnsPerHost: 4,
+		IdleConnTimeout:     90 * time.Second,
+		TLSHandshakeTimeout: 10 * time.Second,
+		DisableKeepAlives:   false,
 	}
 	//return &httputil.ReverseProxy{Director: director, BufferPool: NewBufferPool() }
-	return &httputil.ReverseProxy{Director: director}
-}
-
-func Get(url string) {
-	fmt.Println("GET", url)
-	start := time.Now()
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-	duration := time.Since(start)
-
-	fmt.Printf("%s", b)
-	fmt.Printf("%v\n", duration)
+	return &httputil.ReverseProxy{Director: director, Transport: transport, ErrorHandler: config.ErrorHandler}
 }
 
 // proxyConfig holds the fields that can be configured for a proxy.
 type proxyConfig struct {
-	UserAgent string
-	AuthHeader string
+	UserAgent    string
+	AuthHeader   string
+	ErrorHandler func(http.ResponseWriter, *http.Request, error)
 }
 
 // proxyOption is an option that can be configured when creating a proxy instance.
@@ -104,6 +107,13 @@ type proxyOption func(*proxyConfig)
 func WithUserAgent(ua string) proxyOption {
 	return func(config *proxyConfig) {
 		config.UserAgent = ua
+	}
+}
+
+// WithErrorHandler sets the ErrorHandler callback function in Go's ReverseProxy.
+func WithErrorHandler(handler func(http.ResponseWriter, *http.Request, error)) proxyOption {
+	return func(config *proxyConfig) {
+		config.ErrorHandler = handler
 	}
 }
 
@@ -128,10 +138,10 @@ func singleJoiningSlash(a, b string) string {
 	aslash := strings.HasSuffix(a, "/")
 	bslash := strings.HasPrefix(b, "/")
 	switch {
-		case aslash && bslash:
-			return a + b[1:]
-		case !aslash && !bslash:
-			return a + "/" + b
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
 	}
 	return a + b
 }
