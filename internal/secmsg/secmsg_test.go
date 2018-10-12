@@ -45,7 +45,7 @@ var tests = []struct {
 }
 
 func TestEncodeDecode(t *testing.T) {
-	svc, err := NewTokenService(secretKey)
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,8 +66,8 @@ func TestEncodeDecode(t *testing.T) {
 	}
 }
 
-func TestExpiredToken(t *testing.T) {
-	svc, err := NewTokenService(secretKey)
+func TestExpiredMessage(t *testing.T) {
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,8 +86,8 @@ func TestExpiredToken(t *testing.T) {
 	}
 }
 
-func TestNeverExpiringToken(t *testing.T) {
-	svc, err := NewTokenService(secretKey)
+func TestNeverExpiringMessage(t *testing.T) {
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestNeverExpiringToken(t *testing.T) {
 
 // nil message returns a "non untyped nil" empty slice after decoding
 func TestNilClearText(t *testing.T) {
-	svc, err := NewTokenService(secretKey)
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -132,8 +132,8 @@ func TestNilClearText(t *testing.T) {
 	}
 }
 
-func TestTamperedToken(t *testing.T) {
-	svc, err := NewTokenService(secretKey)
+func TestTamperedMessage(t *testing.T) {
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,14 +152,14 @@ func TestTamperedToken(t *testing.T) {
 }
 
 func TestTooShortKey(t *testing.T) {
-	_, err := NewTokenService(secretKey[0:31])
+	_, err := NewMessageService(secretKey[0:31])
 	if err != ErrSecretKeyLength {
 		t.Error(err)
 	}
 }
 
 func BenchmarkEncode(b *testing.B) {
-	svc, err := NewTokenService(secretKey)
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func BenchmarkEncode(b *testing.B) {
 }
 
 func BenchmarkDecode(b *testing.B) {
-	svc, err := NewTokenService(secretKey)
+	svc, err := NewMessageService(secretKey)
 	if err != nil {
 		b.Fatal(err)
 	}
