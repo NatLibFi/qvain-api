@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/randomkey"
+	"github.com/NatLibFi/qvain-api/internal/randomkey"
 
 	gooidc "github.com/coreos/go-oidc"
 	"github.com/rs/zerolog"
@@ -20,27 +20,40 @@ const (
 
 	// DefaultCookiePath sets the URL path cookies from this package are valid for.
 	DefaultCookiePath = "/api/auth"
+
+	// skipRedirect dumps the token to the end-user's browser instead of redirecting back to the frontend.
+	skipRedirect = false
 )
 
+// OidcClient holds the OpenID Connect and OAuth2 configuration for an authentication provider.
 type OidcClient struct {
-	clientID string
-	state    string
-	logger   zerolog.Logger
+	Name        string
+	clientID    string
+	frontendUrl string
+	state       string
+	logger      zerolog.Logger
 
 	oidcProvider *gooidc.Provider
 	oidcVerifier *gooidc.IDTokenVerifier
 	oauthConfig  oauth2.Config
 	oidcConfig   *gooidc.Config
+
+	//OnLogin func(w http.ResponseWriter, r *http.Request, sub string, exp time.Time) error
+	//OnLogin func(http.ResponseWriter, *http.Request, *oauth2.Token, *gooidc.IDToken) error
+	OnLogin func(http.ResponseWriter, *http.Request, *oauth2.Token, *gooidc.IDToken) error
 }
 
-func NewOidcClient(id string, secret string, redirectUrl string, providerUrl string, logger zerolog.Logger) (*OidcClient, error) {
+// NewOidcClient creates a new OpenID Connect client for the given provider and credentials.
+func NewOidcClient(name string, id string, secret string, redirectUrl string, providerUrl string, frontendUrl string) (*OidcClient, error) {
 	var err error
 
 	ctx := context.Background()
 
 	client := OidcClient{
-		clientID: id,
-		logger:   logger,
+		Name:        name,
+		clientID:    id,
+		frontendUrl: frontendUrl,
+		logger:      zerolog.Nop(),
 	}
 
 	client.oidcProvider, err = gooidc.NewProvider(ctx, providerUrl)
@@ -67,8 +80,17 @@ func NewOidcClient(id string, secret string, redirectUrl string, providerUrl str
 	return &client, nil
 }
 
+// SetLogger sets the logger for the OIDC client.
+// It is probably not safe to call this after the handlers are instantiated.
+func (client *OidcClient) SetLogger(logger zerolog.Logger) {
+	client.logger = logger
+}
+
+// Auth is a HTTP handler that forwards the OIDC client to the Authorization endpoint.
 func (client *OidcClient) Auth() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		nonce := r.URL.RawQuery
+
 		key, err := randomkey.Random16()
 		if err != nil {
 			client.logger.Error().Err(err).Msg("can't create state parameter")
@@ -87,12 +109,13 @@ func (client *OidcClient) Auth() http.HandlerFunc {
 			Secure:   true,
 			HttpOnly: true,
 		})
-		client.logger.Debug().Str("state", state).Msg("redirect to IdP")
-		//log.Println("redirect:", client.oauthConfig.AuthCodeURL(client.state))
-		http.Redirect(w, r, client.oauthConfig.AuthCodeURL(state), http.StatusFound)
+
+		client.logger.Debug().Str("state", state).Bool("withNonce", len(nonce) > 0).Msg("redirect to IdP")
+		http.Redirect(w, r, client.oauthConfig.AuthCodeURL(state, gooidc.Nonce(nonce)), http.StatusFound)
 	}
 }
 
+// Callback is a HTTP handler that takes the callback from the OIDC token endpoint.
 func (client *OidcClient) Callback() http.HandlerFunc {
 	ctx := context.Background()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -130,74 +153,59 @@ func (client *OidcClient) Callback() http.HandlerFunc {
 			return
 		}
 
-		oauth2Token.AccessToken = "*REDACTED*"
-
-		resp := struct {
-			OAuth2Token   *oauth2.Token
-			IDTokenClaims *json.RawMessage // ID Token payload is just JSON.
-		}{oauth2Token, new(json.RawMessage)}
-
-		if err := idToken.Claims(&resp.IDTokenClaims); err != nil {
-			client.logger.Error().Err(err).Msg("failed to extract claims")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// client is now successfully logged in
 		client.logger.Info().Str("sub", idToken.Subject).Msg("login")
 
-		data, err := json.MarshalIndent(resp, "", "    ")
-		if err != nil {
-			client.logger.Error().Err(err).Msg("failed to marshal json response")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		// debug response by dumping it to the browser instead of redirecting
+		if skipRedirect {
+			client.DumpToken(w, oauth2Token, idToken)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		http.Redirect(w, r, "/token#"+rawIDToken, http.StatusFound)
-		w.Write(data)
+
+		// OnLogin callback; don't write to the response before this as it might try to set a cookie
+		//if client.OnLogin != nil && client.OnLogin(w, r, idToken.Subject, oauth2Token.Expiry) != nil {
+		if client.OnLogin != nil {
+			if err := client.OnLogin(w, r, oauth2Token, idToken); err != nil {
+				client.logger.Error().Err(err).Str("sub", idToken.Subject).Msg("OnLogin callback failed")
+				http.Error(w, "Login failed", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// done; redirect to frontend with token in fragment
+		http.Redirect(w, r, client.frontendUrl+"#"+rawIDToken, http.StatusFound)
 	}
 }
 
-func (client *OidcClient) DebugCallback() http.HandlerFunc {
-	ctx := context.Background()
-	return func(w http.ResponseWriter, r *http.Request) {
-		//log.Printf("q: %+v\n", r.URL.Query())
-		if r.URL.Query().Get("state") != client.state {
-			http.Error(w, "state did not match", http.StatusBadRequest)
-			return
-		}
-
-		oauth2Token, err := client.oauthConfig.Exchange(ctx, r.URL.Query().Get("code"))
-		if err != nil {
-			http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		rawIDToken, ok := oauth2Token.Extra("id_token").(string)
-		if !ok {
-			http.Error(w, "No id_token field in oauth2 token.", http.StatusInternalServerError)
-			return
-		}
-		idToken, err := client.oidcVerifier.Verify(ctx, rawIDToken)
-		if err != nil {
-			http.Error(w, "Failed to verify ID Token: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		oauth2Token.AccessToken = "*REDACTED*"
-
-		resp := struct {
-			OAuth2Token   *oauth2.Token
-			IDTokenClaims *json.RawMessage // ID Token payload is just JSON.
-		}{oauth2Token, new(json.RawMessage)}
-
-		if err := idToken.Claims(&resp.IDTokenClaims); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		data, err := json.MarshalIndent(resp, "", "    ")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(data)
+func (client *OidcClient) DumpToken(w http.ResponseWriter, token *oauth2.Token, idToken *gooidc.IDToken) {
+	// censor access token
+	if token.AccessToken != "" {
+		token.AccessToken = "***"
 	}
+
+	// censor refresh token
+	if token.RefreshToken != "" {
+		token.RefreshToken = "***"
+	}
+
+	out := struct {
+		OAuth2Token   *oauth2.Token
+		IDTokenClaims *json.RawMessage
+	}{token, new(json.RawMessage)}
+
+	if err := idToken.Claims(&out.IDTokenClaims); err != nil {
+		client.logger.Error().Err(err).Msg("failed to extract claims")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.MarshalIndent(out, "", "    ")
+	if err != nil {
+		client.logger.Error().Err(err).Msg("failed to marshal json response")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+	return
 }
