@@ -1,8 +1,13 @@
-# ignore binaries
+# binaries
 /bin/
 
-# ignore tmp
+# tmp
 /tmp
+
+# minified files
+*.min.html
+*.min.css
+*.min.js
 
 # ignore swap/tmp files
 *.kate-swp
