@@ -2,8 +2,9 @@
 package redis
 
 import (
-	"github.com/garyburd/redigo/redis"
 	"time"
+
+	"github.com/gomodule/redigo/redis"
 )
 
 type RedisPool struct {
