@@ -35,7 +35,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "")
 	fmt.Fprintln(os.Stderr, "  datasets   query dataset API endpoint")
 	fmt.Fprintln(os.Stderr, "  fetch      fetch from dataset API endpoint")
-	fmt.Fprintln(os.Stderr, "  create     post new dataset to API endpoint")
+	fmt.Fprintln(os.Stderr, "  publish    publish dataset to API endpoint")
 	fmt.Fprintln(os.Stderr, "  version    query version")
 	fmt.Fprintln(os.Stderr, "")
 }
@@ -93,9 +93,9 @@ func main() {
 	case "fetch":
 		endpoint = DATASETS_URL
 		run = runFetch
-	case "create":
+	case "publish":
 		endpoint = DATASETS_URL
-		run = runCreate
+		run = runPublish
 	case "version":
 		run = runVersion
 	default:
