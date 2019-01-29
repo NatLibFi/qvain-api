@@ -65,8 +65,9 @@ _links to FairData ID service_
 
 - [Jira planning and status](https://jira.eduuni.fi/projects/CSCFAIRDATAAAI)
 - [Meeting notes](https://wiki.eduuni.fi/pages/viewpage.action?pageId=54699141)
-
+- [User management](https://wiki.eduuni.fi/pages/viewpage.action?pageId=44569948)
 
 ## Other
 - [Integration tests](https://github.com/CSCfi/FAIRDATAtest) for FairData services
 - [Tutkimus-PAS architectural overview](https://wiki.eduuni.fi/display/att/Tutkimus-PAS+arkkitehtuurikuvauksia)
+- [Fairdata style guide](https://wiki.eduuni.fi/display/att/Tutkimus-PAS%3A+visuaaliset+perusasiat)

@@ -7,24 +7,22 @@ This auto-generated document lists all imports and indirect package dependencies
 
 	github.com/coreos/go-oidc
 	github.com/felixge/httpsnoop
-	github.com/garyburd/redigo/redis
-	github.com/jackc/pgx
-	github.com/lestrrat/go-jwx/jwa
-	github.com/lestrrat/go-jwx/jwt
+	github.com/francoispqt/gojay
+	github.com/gomodule/redigo/redis
 	github.com/mattn/go-isatty
 	github.com/rs/zerolog
 	github.com/rs/zerolog/log
-	github.com/tidwall/gjson
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
-	golang.org/x/net/context
 	golang.org/x/oauth2
 
 ### Dependencies (packages required by imported packages)
 
 	github.com/coreos/go-oidc
 	github.com/felixge/httpsnoop
-	github.com/garyburd/redigo/redis
+	github.com/fernet/fernet-go
+	github.com/francoispqt/gojay
+	github.com/gomodule/redigo/redis
 	github.com/jackc/pgx
 	github.com/jackc/pgx/chunkreader
 	github.com/jackc/pgx/internal/sanitize
@@ -41,6 +39,7 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/lestrrat/go-jwx/jwt
 	github.com/lestrrat/go-pdebug
 	github.com/mattn/go-isatty
+	github.com/muesli/cache2go
 	github.com/pkg/errors
 	github.com/pquerna/cachecontrol
 	github.com/pquerna/cachecontrol/cacheobject
@@ -61,4 +60,4 @@ This auto-generated document lists all imports and indirect package dependencies
 	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2018-06-08 at commit e94f09e by make_go_dependencies_list.sh
+generated on 2018-10-30 at commit 4ed7f08 by make_go_dependencies_list.sh
