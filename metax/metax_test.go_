@@ -158,6 +158,10 @@ func testRequest(method, path string) (*httptest.ResponseRecorder, *http.Request
 }
 
 func TestHandlers(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
 	fakeMetax := httptest.NewServer(testMux)
 	defer fakeMetax.Close()
 

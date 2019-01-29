@@ -16,42 +16,39 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	//"net/url"
 	"bytes"
 	"context"
 	"errors"
+	"runtime"
 	"strings"
 
-	"github.com/NatLibFi/qvain-api/version"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+	//"github.com/rs/zerolog/log"
 )
 
 const (
-	VERBOSE = false
+	Verbose = false
 
-	DATASETS_ENDPOINT = "/rest/datasets/"
+	DatasetsEndpoint = "/rest/datasets/"
 )
-
-var UserAgent string = "qvain " + version.CommitHash
 
 var (
 	errStreamMustBeArray = errors.New("stream is not a json array")
 	errEmptyDataset      = errors.New("dataset is empty")
 )
 
-func init() {
-	//UserAgent = UserAgent + " (" + runtime.Version() + ")"
-}
-
 // MetaxService represents the Metax API server.
 type MetaxService struct {
-	host         string
-	baseUrl      string
-	client       *http.Client
-	disableHttps bool
-	logger       zerolog.Logger
+	host                string
+	baseUrl             string
+	client              *http.Client
+	userAgent           string
+	disableHttps        bool
+	returnLatestVersion bool
+	logger              zerolog.Logger
 
 	urlDatasets string
 
@@ -71,6 +68,12 @@ func WithLogger(logger zerolog.Logger) MetaxOption {
 	}
 }
 
+func WithUserAgent(ua string) MetaxOption {
+	return func(svc *MetaxService) {
+		svc.userAgent = ua
+	}
+}
+
 func WithCredentials(user, pass string) MetaxOption {
 	return func(svc *MetaxService) {
 		svc.user = user
@@ -78,13 +81,30 @@ func WithCredentials(user, pass string) MetaxOption {
 	}
 }
 
+func WithLatestVersion(svc *MetaxService) {
+	svc.returnLatestVersion = true
+}
+
 // NewMetaxService returns a Metax API client.
 func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 	svc := &MetaxService{
-		host:   host,
-		logger: zerolog.Nop(),
+		host:      host,
+		logger:    zerolog.Nop(),
+		userAgent: "Go-http-client/" + runtime.Version(),
 		client: &http.Client{
 			Timeout: 5 * time.Second,
+			Transport: &http.Transport{
+				DisableCompression: true,
+				DialContext: (&net.Dialer{
+					Timeout:   10 * time.Second,
+					KeepAlive: 30 * time.Second,
+					DualStack: true,
+				}).DialContext,
+				MaxIdleConns:        16,
+				MaxIdleConnsPerHost: 4,
+				IdleConnTimeout:     90 * time.Second,
+				TLSHandshakeTimeout: 10 * time.Second,
+			},
 		},
 	}
 
@@ -106,7 +126,7 @@ func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 		}
 	*/
 	//svc.logger = zerolog.Nop()
-	svc.logger = log.Logger
+	//svc.logger = log.Logger
 	//_ = log.Logger
 
 	svc.makeEndpoints(svc.baseUrl)
@@ -115,7 +135,7 @@ func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 }
 
 func (api *MetaxService) makeEndpoints(base string) {
-	api.urlDatasets = base + DATASETS_ENDPOINT
+	api.urlDatasets = base + DatasetsEndpoint
 }
 
 type PaginatedResponse struct {
@@ -165,7 +185,7 @@ func (api *MetaxService) getRequest(url string) (*http.Request, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", api.userAgent)
 	return req, nil
 }
 
@@ -173,7 +193,7 @@ func (api *MetaxService) Datasets(params ...DatasetOption) (*PaginatedResponse, 
 	req, err := http.NewRequest("GET", api.urlDatasets, nil)
 	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", api.userAgent)
 
 	for _, param := range params {
 		param(req)
@@ -193,7 +213,7 @@ func (api *MetaxService) Datasets(params ...DatasetOption) (*PaginatedResponse, 
 	}
 	defer res.Body.Close()
 
-	if VERBOSE {
+	if Verbose {
 		api.logger.Printf("response: %+v\n", res)
 		api.logger.Print("Content-Length:", res.Header.Get("Content-Length"))
 		api.logger.Print("Content-Type:", res.Header["Content-Type"])
@@ -230,12 +250,12 @@ func (api *MetaxService) Datasets(params ...DatasetOption) (*PaginatedResponse, 
 	var page PaginatedResponse
 	err = json.NewDecoder(res.Body).Decode(&page)
 	if err != nil {
-		if n, err2 := io.Copy(ioutil.Discard, res.Body); n > 0 || err != nil {
+		if n, err2 := io.CopyN(ioutil.Discard, res.Body, 4096); n > 0 || err != nil {
 			api.logger.Printf("drained response: bytes=%d, err=%s", n, err2)
 		}
 		return nil, err
 	}
-	if n, err := io.Copy(ioutil.Discard, res.Body); n > 0 || err != nil {
+	if n, err := io.CopyN(ioutil.Discard, res.Body, 4096); n > 0 || err != nil {
 		api.logger.Printf("drained response: bytes=%d, err=%s", n, err)
 	}
 	count = page.Count
@@ -246,7 +266,8 @@ func (api *MetaxService) Datasets(params ...DatasetOption) (*PaginatedResponse, 
 // drainBody discards the response body when it's not read until the end, so the next keep-alive request can be handled with the same connection.
 // Murky stuff; is this still/again needed in whatever Go version this is compiled with?
 func (api *MetaxService) drainBody(body io.ReadCloser) {
-	if n, err := io.Copy(ioutil.Discard, body); n > 0 || err != nil {
+	// hmm... arbitrary trade-off limit
+	if n, err := io.CopyN(ioutil.Discard, body, 4096); n > 0 || err != nil {
 		api.logger.Printf("drained response: bytes=%d, err=%s", n, err)
 	}
 }
@@ -255,7 +276,7 @@ func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, err
 	req, err := http.NewRequest("GET", api.urlDatasets+"?stream=true&no_pagination=true", nil)
 	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", api.userAgent)
 
 	for _, param := range params {
 		param(req)
@@ -333,7 +354,7 @@ func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, err
 func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...DatasetOption) (chan *MetaxRawRecord, chan error, error) {
 	req, err := http.NewRequest("GET", api.urlDatasets, nil)
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
+	req.Header.Set("User-Agent", api.userAgent)
 
 	for _, param := range params {
 		param(req)
@@ -356,11 +377,11 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	switch res.StatusCode {
 	case 200:
 	case 404:
-		return nil, nil, fmt.Errorf("error: not found (code: %d)", res.StatusCode)
+		return nil, nil, fmt.Errorf("error: not found (status: %d)", res.StatusCode)
 	case 403:
-		return nil, nil, fmt.Errorf("error: forbidden (code: %d)", res.StatusCode)
+		return nil, nil, fmt.Errorf("error: forbidden (status: %d)", res.StatusCode)
 	default:
-		return nil, nil, fmt.Errorf("error: can't retrieve record (code: %d)", res.StatusCode)
+		return nil, nil, fmt.Errorf("error: can't retrieve record (status: %d)", res.StatusCode)
 	}
 
 	if !strings.HasPrefix(res.Header.Get("Content-Type"), "application/json") {
@@ -426,16 +447,20 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	return outc, errc, nil
 }
 
+func (api *MetaxService) writeApiHeaders(req *http.Request) {
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", api.userAgent)
+	req.SetBasicAuth(api.user, api.pass)
+}
+
 func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json.RawMessage, error) {
 	if blob == nil || len(blob) < 1 {
 		return nil, errEmptyDataset
 	}
 
 	req, err := http.NewRequest(http.MethodPost, api.urlDatasets, bytes.NewBuffer(blob))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
-	req.SetBasicAuth(api.user, api.pass)
+	api.writeApiHeaders(req)
 
 	fmt.Printf("%v\n", req)
 	start := time.Now()
@@ -459,11 +484,11 @@ func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json
 	case 201:
 		return body, nil
 	case 400:
-		return nil, &ApiError{"invalid dataset", body}
+		return nil, &ApiError{"invalid dataset", body, res.StatusCode}
 	case 401:
-		return nil, &ApiError{"authorisation required", nil}
+		return nil, &ApiError{"authorisation required", nil, res.StatusCode}
 	default:
-		return nil, &ApiError{fmt.Sprintf("API returned status code %d", res.StatusCode), nil}
+		return nil, &ApiError{"API returned error", nil, res.StatusCode}
 	}
 
 	fmt.Println("response Status:", res.Status)
@@ -476,38 +501,139 @@ func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json
 	return nil, nil
 }
 
-func (api *MetaxService) GetId(id string) (string, error) {
+// Store sends – or "publishes" – a dataset to the Metax dataset API.
+// If the dataset has no identifier yet, it is POSTed to the dataset endpoint as a new dataset;
+// otherwise it is PUT to the endpoint for that specific dataset identifier.
+// If the request was successful, the dataset will be returned;
+// if the request failed, and the response was in JSON format, the API error will include that error body.
+func (api *MetaxService) Store(ctx context.Context, blob json.RawMessage) (json.RawMessage, error) {
+	if blob == nil || len(blob) < 1 {
+		return nil, errEmptyDataset
+	}
+
+	id := GetIdentifier(blob)
+
+	var (
+		req *http.Request
+		err error
+	)
+
+	if id == "" {
+		req, err = http.NewRequest(http.MethodPost, api.urlDatasets, bytes.NewBuffer(blob))
+	} else {
+		req, err = http.NewRequest(http.MethodPut, api.UrlForId(id), bytes.NewBuffer(blob))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	api.writeApiHeaders(req)
+
+	start := time.Now()
+	defer func() {
+		api.logger.Printf("metax: create processed in %v", time.Since(start))
+	}()
+
+	res, err := api.client.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// only read JSON responses; 204 is the only valid status code that might not return JSON
+	hasJson := strings.HasPrefix(res.Header.Get("Content-Type"), "application/json")
+	if !hasJson && res.StatusCode != http.StatusNoContent {
+		return nil, &ApiError{"invalid content-type: expected JSON", nil, res.StatusCode}
+	}
+
+	var body []byte
+	body, _ = ioutil.ReadAll(res.Body)
+	if len(body) < 1 && res.StatusCode != http.StatusNoContent {
+		return nil, &ApiError{"invalid content-length: zero body", nil, res.StatusCode}
+	}
+
+	fmt.Println("Status:", res.StatusCode)
+
+	switch res.StatusCode {
+	case 200:
+		fmt.Println("updated dataset:", id)
+		if newId := MaybeNewVersionId(body); newId != "" {
+			fmt.Println("created new version:", newId)
+			//if api.returnLatestVersion {
+			if false {
+				newVersion, err := api.GetId(newId)
+				fmt.Println("called newVersion", err)
+				fmt.Printf("old: %s\n\n", body)
+				fmt.Printf("new: %s\n\n", newVersion)
+				return newVersion, err
+			}
+		}
+		return body, nil
+	case 201:
+		if createdId := GetIdentifier(body); createdId != "" {
+			fmt.Println("created new dataset:", createdId)
+		}
+		return body, nil
+	case 204:
+		// not sure how to handle this here
+		return nil, nil
+	case 400:
+		// could also indicate an error trying to modify old versions:
+		// {"detail":["Changing files in old dataset versions is not permitted."],...}
+		return nil, &ApiError{"invalid dataset", body, res.StatusCode}
+	case 401:
+		return nil, &ApiError{"authorisation required", body, res.StatusCode}
+	case 404:
+		return nil, &ApiError{"not found", body, res.StatusCode}
+	default:
+		fmt.Printf("boooodyyyy: %s\n", body)
+		return nil, &ApiError{"API returned error", body, res.StatusCode}
+	}
+
+	fmt.Println("response Status:", res.Status)
+	fmt.Println("response Headers:", res.Header)
+	fmt.Println("response Body:", string(body))
+	if hasJson {
+		return body, nil
+	}
+
+	return nil, nil
+}
+
+func (api *MetaxService) GetId(id string) (json.RawMessage, error) {
 	req, err := http.NewRequest("GET", api.UrlForId(id), nil)
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", UserAgent)
+	if err != nil {
+		return nil, err
+	}
+	api.writeApiHeaders(req)
+
 	api.logger.Printf("request headers: %+v\n", req)
 	res, err := api.client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer res.Body.Close()
+
+	if !strings.HasPrefix(res.Header.Get("Content-Type"), "application/json") {
+		return nil, ErrInvalidContentType
+	}
 
 	switch res.StatusCode {
 	case 200:
 	case 404:
-		return "", fmt.Errorf("error: not found (code: %d)", res.StatusCode)
+		return nil, &ApiError{"not found", nil, res.StatusCode}
 	case 403:
-		return "", fmt.Errorf("error: forbidden (code: %d)", res.StatusCode)
+		return nil, &ApiError{"forbidden", nil, res.StatusCode}
 	default:
-		return "", fmt.Errorf("error: can't retrieve record (code: %d)", res.StatusCode)
-	}
-
-	if len(res.Header["Content-Type"]) != 1 || res.Header["Content-Type"][0] != "application/json" {
-		return "", fmt.Errorf("unknown content-type, expected json")
+		return nil, &ApiError{"API returned error", nil, res.StatusCode}
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return fmt.Sprintf("%s", body), nil
+	return body, nil
 }
 
 func (api *MetaxService) ParseRecord(txt string) (*MetaxRecord, error) {

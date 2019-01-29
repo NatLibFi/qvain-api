@@ -39,7 +39,7 @@ func LoadMetaxDataset(ds *models.Dataset) models.TypedDataset {
 }
 
 // CreateData creates a dataset from template and merges set fields.
-func (dataset *MetaxDataset) CreateData(family int, schema string, blob []byte) error {
+func (dataset *MetaxDataset) CreateData(family int, schema string, blob []byte, extra map[string]string) error {
 	if family == 0 {
 		return errors.New("need schema family")
 	}
@@ -63,8 +63,18 @@ func (dataset *MetaxDataset) CreateData(family int, schema string, blob []byte) 
 	template["research_dataset"] = (*json.RawMessage)(&blob)
 	template["editor"] = (*json.RawMessage)(&editorJson)
 
-	user, _ := json.Marshal(dataset.Dataset.Creator.String())
-	template["metadata_provider_user"] = (*json.RawMessage)(&user)
+	//user, _ := json.Marshal(dataset.Dataset.Creator.String())
+	//template["metadata_provider_user"] = (*json.RawMessage)(&user)
+	if extra != nil {
+		if extid, ok := extra["identity"]; ok && extid != "" {
+			extidJson, _ := json.Marshal(extid)
+			template["metadata_provider_user"] = (*json.RawMessage)(&extidJson)
+		}
+		if org, ok := extra["org"]; ok && org != "" {
+			orgJson, _ := json.Marshal(org)
+			template["metadata_provider_org"] = (*json.RawMessage)(&orgJson)
+		}
+	}
 
 	newBlob, err := json.MarshalIndent(template, "", "\t")
 	if err != nil {
@@ -76,7 +86,7 @@ func (dataset *MetaxDataset) CreateData(family int, schema string, blob []byte) 
 }
 
 // UpdateData creates a partial dataset JSON blob to patch an existing one with.
-func (dataset *MetaxDataset) UpdateData(family int, schema string, blob []byte) error {
+func (dataset *MetaxDataset) UpdateData(family int, schema string, blob []byte, extra map[string]string) error {
 	if family == 0 {
 		return errors.New("need schema family")
 	}
@@ -91,12 +101,19 @@ func (dataset *MetaxDataset) UpdateData(family int, schema string, blob []byte) 
 		RecordId:   static(dataset.Dataset.Id.String()),
 	}
 
+	var extid string
+	if extra != nil {
+		extid, _ = extra["identity"]
+	}
+
 	patchedFields := &struct {
 		ResearchDataset *json.RawMessage `json:"research_dataset"`
 		Editor          *Editor          `json:"editor"`
+		Extid           string           `json:"metadata_provider_user,omitempty"`
 	}{
 		ResearchDataset: (*json.RawMessage)(&blob),
 		Editor:          editor,
+		Extid:           extid,
 	}
 
 	newBlob, err := json.MarshalIndent(patchedFields, "", "\t")

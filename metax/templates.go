@@ -4,26 +4,36 @@ import (
 	"encoding/json"
 )
 
-var templates = map[string]json.RawMessage{
-	"metax-ida": json.RawMessage(`
+const (
+	SchemaIda = "metax-ida"
+	SchemaAtt = "metax-att"
+)
+
+var (
+	// templates variable contains the base templates for empty metax datasets.
+	templates = map[string]json.RawMessage{
+		SchemaIda: json.RawMessage(`
 		{
 			"data_catalog": "urn:nbn:fi:att:data-catalog-ida",
 			"metadata_provider_org": "",
 			"metadata_provider_user": "",
 			"research_dataset": {}
 		}`),
-	"metax-att": json.RawMessage(`
+		SchemaAtt: json.RawMessage(`
 		{
-		"data_catalog": "urn:nbn:fi:att:data-catalog-att",
-		"metadata_provider_org": "",
-		"metadata_provider_user": "",
-		"research_dataset": {}
-	}`),
-}
+			"data_catalog": "urn:nbn:fi:att:data-catalog-att",
+			"metadata_provider_org": "",
+			"metadata_provider_user": "",
+			"research_dataset": {}
+		}`),
+	}
 
-var parsedTemplates = map[string]map[string]*json.RawMessage{}
+	// parsedTemplates contains the pre-parsed unserialised json for the templates.
+	parsedTemplates = map[string]map[string]*json.RawMessage{}
+)
 
 func init() {
+	// preparse on start-up
 	for schema, template := range templates {
 		var parsed map[string]*json.RawMessage
 		err := json.Unmarshal(template, &parsed)

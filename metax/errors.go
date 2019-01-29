@@ -2,6 +2,12 @@ package metax
 
 import (
 	"encoding/json"
+	"errors"
+)
+
+var (
+	ErrInvalidContentType = errors.New("invalid content-type: expected json")
+	ErrNotFound           = errors.New("not found")
 )
 
 // LinkingError is a custom error type that adds the missing field name.
@@ -38,10 +44,15 @@ func (e *LinkingError) IsNotMine() bool {
 type ApiError struct {
 	myError    string
 	metaxError json.RawMessage
+	statusCode int
 }
 
 func (e *ApiError) Error() string {
 	return e.myError
+}
+
+func (e *ApiError) StatusCode() int {
+	return e.statusCode
 }
 
 func (e *ApiError) OriginalError() json.RawMessage {
