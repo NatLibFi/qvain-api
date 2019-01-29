@@ -90,7 +90,7 @@ func main() {
 	case "add":
 		run = runAddRecord
 	case "view":
-		run = runViewByOwner
+		run = runViewDatasetsByOwner
 	case "export":
 		run = runExportDataset
 	case "version":

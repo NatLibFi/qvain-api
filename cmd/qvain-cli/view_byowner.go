@@ -10,7 +10,7 @@ import (
 	"github.com/wvh/uuid/flag"
 )
 
-func runViewByOwner(psql *psql.DB, args []string) error {
+func runViewDatasetsByOwner(psql *psql.DB, args []string) error {
 	flags := flag.NewFlagSet("view_byowner", flag.ExitOnError)
 	var (
 		owner uuidflag.Uuid // = uuidflag.DefaultFromString("053bffbcc41edad4853bea91fc42ea18") // 053bffbcc41edad4853bea91fc42ea18
@@ -28,7 +28,7 @@ func runViewByOwner(psql *psql.DB, args []string) error {
 		return fmt.Errorf("error: either flag `owner` or flag `extid` must be set")
 	}
 
-	blob, err := psql.ViewByOwner(owner.Get())
+	blob, err := psql.ViewDatasetsByOwner(owner.Get())
 	if err != nil {
 		return err
 	}
