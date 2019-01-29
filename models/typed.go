@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 
 	"github.com/wvh/uuid"
@@ -18,14 +19,14 @@ var (
 
 // TypedDataset is a wrapper around a base dataset that allows different dataset types to fondle the data in ways that pleases them.
 type TypedDataset interface {
-	CreateData(int, string, []byte) error
-	UpdateData(int, string, []byte) error
+	CreateData(int, string, []byte, map[string]string) error
+	UpdateData(int, string, []byte, map[string]string) error
 	Unwrap() *Dataset
 }
 
 // CreateDatasetFromJson creates a typed dataset with JSON data originating from the web API.
 // Caller closes body.
-func CreateDatasetFromJson(creator uuid.UUID, data io.Reader) (TypedDataset, error) {
+func CreateDatasetFromJson(creator uuid.UUID, data io.Reader, inject map[string]string) (TypedDataset, error) {
 	decoder := json.NewDecoder(data)
 
 	// partially decode json
@@ -69,7 +70,7 @@ func CreateDatasetFromJson(creator uuid.UUID, data io.Reader) (TypedDataset, err
 		return nil, err
 	}
 
-	err = typed.CreateData(*aux.Family, *aux.Schema, *aux.Blob)
+	err = typed.CreateData(*aux.Family, *aux.Schema, *aux.Blob, inject)
 	if err != nil {
 		return nil, err
 	}
@@ -78,17 +79,21 @@ func CreateDatasetFromJson(creator uuid.UUID, data io.Reader) (TypedDataset, err
 }
 
 // UpdateDatasetFromJson makes a – potentially partial – typed dataset with JSON data originating from the web API.
-func UpdateDatasetFromJson(owner uuid.UUID, data []byte) (TypedDataset, error) {
+//func UpdateDatasetFromJson(owner uuid.UUID, data []byte) (TypedDataset, error) {
+func UpdateDatasetFromJson(owner uuid.UUID, data io.Reader, inject map[string]string) (TypedDataset, error) {
+	decoder := json.NewDecoder(data)
+
 	aux := &struct {
 		Id *uuid.UUID `json:"id"`
 
-		Family int              `json:"family"`
+		Family int              `json:"type"`
 		Schema string           `json:"schema"`
 		Blob   *json.RawMessage `json:"dataset"`
 
 		Valid bool `json:"valid"`
 	}{}
-	err := json.Unmarshal(data, aux)
+	err := decoder.Decode(aux)
+	//err := json.Unmarshal(data, aux)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +112,9 @@ func UpdateDatasetFromJson(owner uuid.UUID, data []byte) (TypedDataset, error) {
 		Owner: owner,
 	})
 
-	err = typed.UpdateData(aux.Family, aux.Schema, *aux.Blob)
+	fmt.Printf("typed: %#v\n", typed)
+
+	err = typed.UpdateData(aux.Family, aux.Schema, *aux.Blob, inject)
 	if err != nil {
 		return nil, err
 	}

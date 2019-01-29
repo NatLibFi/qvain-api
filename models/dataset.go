@@ -68,12 +68,12 @@ func (ds *Dataset) SetData(family int, schema string, blob []byte) error {
 }
 
 // CreateData allows dataset types to override what happens on dataset creation.
-func (ds *Dataset) CreateData(family int, schema string, blob []byte) error {
+func (ds *Dataset) CreateData(family int, schema string, blob []byte, extra map[string]string) error {
 	return ds.SetData(family, schema, blob)
 }
 
 // UpdateData allows dataset types to override what happens on update of an existing dataset.
-func (ds *Dataset) UpdateData(family int, schema string, blob []byte) error {
+func (ds *Dataset) UpdateData(family int, schema string, blob []byte, extra map[string]string) error {
 	return ds.SetData(family, schema, blob)
 }
 
