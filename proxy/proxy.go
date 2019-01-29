@@ -78,8 +78,8 @@ func NewSingleHostReverseProxy(target *url.URL, opts ...proxyOption) *httputil.R
 	// shorter timeouts and higher per-host concurrency
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
-			Timeout: 10 * time.Second,
 			//Timeout:   20 * time.Millisecond,
+			Timeout:   10 * time.Second,
 			KeepAlive: 30 * time.Second,
 			DualStack: true,
 		}).DialContext,
