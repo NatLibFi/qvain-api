@@ -11,7 +11,7 @@ const secretKeyLength = 32
 
 var (
 	ErrSecretKeyLength    = errors.New("secret key too short")
-	ErrVerificationFailed = errors.New("verification failed")
+	ErrVerificationFailed = errors.New("message verification failed")
 )
 
 type MessageService struct {
