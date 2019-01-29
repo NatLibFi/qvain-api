@@ -24,9 +24,9 @@ const tokenKey contextKey = 0
 
 // Predefined errors returned by this package.
 var (
-	errNeedSecretKey = errors.New("need secret key to verify JWT tokens")
-	errInvalidToken  = errors.New("invalid token")
-	errMissingJwtID  = errors.New("mandatory field `jti` is missing")
+	ErrNeedSecretKey = errors.New("need secret key to verify JWT tokens")
+	ErrInvalidToken  = errors.New("invalid token")
+	ErrMissingJwtID  = errors.New("mandatory field `jti` is missing")
 )
 
 type opt func(*JwtHandler)
@@ -73,7 +73,7 @@ type JwtHandler struct {
 // NewJwtHandler configures a JWT token middleware handler.
 func NewJwtHandler(key []byte, audience string, opts ...opt) *JwtHandler {
 	if len(key) < 1 {
-		panic(errNeedSecretKey)
+		panic(ErrNeedSecretKey)
 	}
 
 	jh := &JwtHandler{
@@ -93,9 +93,9 @@ func NewJwtHandler(key []byte, audience string, opts ...opt) *JwtHandler {
 // TokenError calls the set ErrorFunc function while taking the level of verbosity into consideration.
 func (jh *JwtHandler) TokenError(w http.ResponseWriter, err string, code int) {
 	if jh.verbose {
-		jh.errorFunc(w, errInvalidToken.Error()+": "+err, code)
+		jh.errorFunc(w, ErrInvalidToken.Error()+": "+err, code)
 	} else {
-		jh.errorFunc(w, errInvalidToken.Error(), code)
+		jh.errorFunc(w, ErrInvalidToken.Error(), code)
 	}
 }
 
@@ -116,44 +116,43 @@ func FromContext(ctx context.Context) (*jwt.Token, bool) {
 	return token, ok
 }
 
+// CheckToken parses and verifies a token with configured parameters.
+func (jh *JwtHandler) CheckToken(token string) (*jwt.Token, error) {
+	jwtToken, err := jwt.ParseString(token, jwt.WithVerify(jh.signAlgorithm, jh.key))
+	if err != nil {
+		return nil, err
+	}
+
+	if err = jwtToken.Verify(jwt.WithAcceptableSkew(10e9), jwt.WithAudience(jh.audience)); err != nil {
+		return nil, err
+	}
+
+	// check if `jti` is present manually
+	if jh.mustJwtID {
+		if _, present := jwtToken.Get(jwt.JwtIDKey); !present {
+			return nil, ErrMissingJwtID
+		}
+	}
+
+	return jwtToken, nil
+}
+
 // MustToken retrieves a token from a HTTP request, validating signature and claims.
 // It passes control to the next handler in case of success, or returns an error if validation fails.
 func (jh *JwtHandler) AppendUser(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := TokenFromHeader(r)
 		if token == "" {
-			//ctx := context.WithValue(r.Context(), tokenKey, nil)
-			//h.ServeHTTP(w, r.WithContext(ctx))
 			h.ServeHTTP(w, r)
 			return
 		}
 
-		jwtToken, err := jwt.ParseString(token, jwt.WithVerify(jh.signAlgorithm, jh.key))
+		jwtToken, err := jh.CheckToken(token)
 		if err != nil {
 			log.Println(err)
 			h.ServeHTTP(w, r)
 			return
 		}
-
-		if err := jwtToken.Verify(jwt.WithAcceptableSkew(10e9), jwt.WithAudience(jh.audience)); err != nil {
-			log.Println(err)
-			h.ServeHTTP(w, r)
-			return
-		}
-
-		// check if `jti` is present manually
-		if jh.mustJwtID {
-			if id, present := jwtToken.Get(jwt.JwtIDKey); !present {
-				log.Println(errMissingJwtID)
-				h.ServeHTTP(w, r)
-				return
-			} else {
-				_ = id
-				//log.Printf("JwtID: %s\n", id)
-			}
-		}
-
-		//log.Printf("jwt: %+v\n", jwtToken)
 
 		ctx := context.WithValue(r.Context(), tokenKey, jwtToken)
 		h.ServeHTTP(w, r.WithContext(ctx))
@@ -185,7 +184,7 @@ func (jh *JwtHandler) MustToken(h http.Handler) http.Handler {
 		// check if `jti` is present manually
 		if jh.mustJwtID {
 			if id, present := jwtToken.Get(jwt.JwtIDKey); !present {
-				jh.TokenError(w, errMissingJwtID.Error(), http.StatusUnauthorized)
+				jh.TokenError(w, ErrMissingJwtID.Error(), http.StatusUnauthorized)
 				return
 			} else {
 				_ = id
