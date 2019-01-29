@@ -22,12 +22,7 @@ func (db *DB) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
 	}
 	log.Println("tag:", tag)
 
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (db *DB) Store(dataset *models.Dataset) error {
@@ -42,12 +37,7 @@ func (db *DB) Store(dataset *models.Dataset) error {
 		return handleError(err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return tx.Commit()
 }
 
 func (db *DB) BatchStore(datasets []*models.Dataset) error {
@@ -113,7 +103,7 @@ func (db *DB) UpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error 
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return err
 	}
@@ -126,8 +116,23 @@ func (db *DB) UpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error 
 	return tx.Commit()
 }
 
+// internal update, user triggered
 func (tx *Tx) update(id uuid.UUID, blob []byte) error {
-	ct, err := tx.Exec("UPDATE datasets SET modified = now(), blob = $2 WHERE id = $1", id.Array(), blob)
+	ct, err := tx.Exec("UPDATE datasets SET modified = now(), seq = seq + 1, blob = $2 WHERE id = $1", id.Array(), blob)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// internal update, service triggered
+func (tx *Tx) updateByService(id uuid.UUID, blob []byte) error {
+	ct, err := tx.Exec("UPDATE datasets SET synced = now(), seq = seq + 1, blob = $2 WHERE id = $1", id.Array(), blob)
 	if err != nil {
 		return err
 	}
@@ -162,7 +167,7 @@ func (db *DB) PatchWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error {
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return err
 	}
@@ -176,7 +181,7 @@ func (db *DB) PatchWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error {
 }
 
 func (tx *Tx) patch(id uuid.UUID, blob []byte) error {
-	ct, err := tx.Exec("UPDATE datasets SET modified = now(), blob = blob || $2 WHERE id = $1", id.Array(), blob)
+	ct, err := tx.Exec("UPDATE datasets SET modified = now(), seq = seq + 1, blob = blob || $2 WHERE id = $1", id.Array(), blob)
 	if err != nil {
 		return err
 	}
@@ -195,7 +200,7 @@ func (db *DB) SmartGetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset,
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +228,7 @@ func (db *DB) SmartUpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) e
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return err
 	}
@@ -250,6 +255,49 @@ func (db *DB) SmartUpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) e
 	return tx.Commit()
 }
 
+// StorePublished saves a published dataset to the database and marks it as published.
+// TODO: handle empty blob
+func (db *DB) StorePublished(id uuid.UUID, blob []byte) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	ct, err := tx.Exec("UPDATE datasets SET blob = $2, published = true, synced = now(), seq = seq + 1 WHERE id = $1", id.Array(), blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+func (db *DB) Clone(id uuid.UUID, newid uuid.UUID, blob []byte) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	ct, err := tx.Exec(`
+		INSERT INTO datasets(id, creator, owner, created, modified, synced, published, valid, family, schema, blob)
+		(SELECT $2, creator, owner, created, modified, synced, published, valid, family, schema, $3 WHERE id = $1)`,
+		id, newid, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
 func (tx *Tx) getFamily(id uuid.UUID) (int, error) {
 	var fam int
 	err := tx.QueryRow("SELECT family FROM datasets WHERE id = $1", id.Array()).Scan(&fam)
@@ -260,8 +308,8 @@ func (tx *Tx) getFamily(id uuid.UUID) (int, error) {
 	return fam, nil
 }
 
-// checkOwner returns an error if the record is not owned by the given user.
-func (tx *Tx) checkOwner(id uuid.UUID, owner uuid.UUID) error {
+// CheckOwner returns an error if the record is not owned by the given user.
+func (tx *Tx) CheckOwner(id uuid.UUID, owner uuid.UUID) error {
 	var isOwner bool
 	err := tx.QueryRow("SELECT (owner = $2) FROM datasets WHERE id = $1", id.Array(), owner.Array()).Scan(&isOwner)
 	if err != nil {
@@ -274,6 +322,20 @@ func (tx *Tx) checkOwner(id uuid.UUID, owner uuid.UUID) error {
 
 	return nil
 }
+
+// CheckOwner calls tx.CheckOwner to check if the record exists and is owner by the given user.
+func (db *DB) CheckOwner(id uuid.UUID, owner uuid.UUID) (err error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	return tx.CheckOwner(id, owner)
+}
+
+// publish
+//func (db *DB) Publish(id uuid.UUID, )
 
 // MarkPublished marks a dataset as published and updates its sync time. It does not do owner checks.
 func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
@@ -300,7 +362,7 @@ func (db *DB) MarkPublishedWithOwner(id uuid.UUID, owner uuid.UUID, published bo
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return err
 	}
@@ -316,7 +378,7 @@ func (db *DB) MarkPublishedWithOwner(id uuid.UUID, owner uuid.UUID, published bo
 
 // markPublished does the actual marking of a dataset as published.
 func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
-	ct, err := tx.Exec("UPDATE datasets SET published = $2, pushed = $3 WHERE id = $1", id.Array(), published, time.Now())
+	ct, err := tx.Exec("UPDATE datasets SET published = $2, synced = $3 WHERE id = $1", id.Array(), published, time.Now())
 	if err != nil {
 		return err
 	}
@@ -356,7 +418,7 @@ func (db *DB) GetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset, erro
 	}
 	defer tx.Rollback()
 
-	err = tx.checkOwner(id, owner)
+	err = tx.CheckOwner(id, owner)
 	if err != nil {
 		return nil, err
 	}
@@ -389,6 +451,32 @@ func (tx *Tx) get(id uuid.UUID, key string) (*models.Dataset, error) {
 	}
 
 	return res, nil
+}
+
+func (db *DB) Delete(id uuid.UUID, owner *uuid.UUID) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if owner != nil {
+		err = tx.CheckOwner(id, *owner)
+		if err != nil {
+			return handleError(err)
+		}
+	}
+
+	ct, err := tx.Exec(`DELETE FROM datasets WHERE id = $1`, id.Array())
+	if err != nil {
+		return handleError(err)
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return tx.Commit()
 }
 
 func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {

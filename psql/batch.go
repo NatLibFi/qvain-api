@@ -21,7 +21,7 @@ func (db *DB) NewBatch() (*BatchManager, error) {
 	return &BatchManager{tx: tx}, nil
 }
 
-func (db *DB) NewBatchWithUser(uid uuid.UUID) (*BatchManager, error) {
+func (db *DB) NewBatchForUser(uid uuid.UUID) (*BatchManager, error) {
 	b, err := db.NewBatch()
 	if err != nil {
 		return nil, err
@@ -35,11 +35,19 @@ func (b *BatchManager) Store(dataset *models.Dataset) error {
 	return b.tx.Store(dataset)
 }
 
+func (b *BatchManager) Update(id uuid.UUID, blob []byte) error {
+	return b.tx.updateByService(id, blob)
+}
+
+func (b *BatchManager) Upsert(data *models.Dataset) error {
+	return ErrNotImplemented
+}
+
 func (b *BatchManager) writeStamp() error {
 	if b.triggerUid == nil {
 		return nil
 	}
-	_, err := b.tx.Exec(`INSERT INTO lastsync(uid, ts, success) VALUES($1, $2, $3) ON CONFLICT DO UPDATE SET ts = $2, success = $3 WHERE uid = $1`, b.triggerUid.Array(), time.Now(), true)
+	_, err := b.tx.Exec(`INSERT INTO lastsync(uid, ts, success) VALUES($1, $2, $3) ON CONFLICT (uid) DO UPDATE SET ts = $2, success = $3 WHERE lastsync.uid = $1`, b.triggerUid.Array(), time.Now(), true)
 	return err
 }
 
@@ -66,7 +74,7 @@ func (db *DB) GetLastSync(uid uuid.UUID) (time.Time, error) {
 
 func (tx *Tx) getLastSync(uid uuid.UUID) (time.Time, error) {
 	var last time.Time
-	err := tx.QueryRow("SELECT ts FROM lastsync WHERE id = $1", uid.Array()).Scan(&last)
+	err := tx.QueryRow("SELECT ts FROM lastsync WHERE uid = $1", uid.Array()).Scan(&last)
 	if err != nil {
 		return time.Time{}, handleError(err)
 	}

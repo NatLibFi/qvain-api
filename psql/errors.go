@@ -1,17 +1,41 @@
 package psql
 
 import (
-	"errors"
-	"github.com/jackc/pgx"
 	"log"
+	"net"
+
+	"github.com/jackc/pgx"
 )
+
+// New returns an error that formats as the given text.
+func NewError(text string) error {
+	return &DatabaseError{text}
+}
+
+// DatabaseError is a trivial implementation of error.
+type DatabaseError struct {
+	s string
+}
+
+// Error satisfies Go's Error interface.
+func (e *DatabaseError) Error() string {
+	return e.s
+}
 
 // Errors exported by the database layer.
 var (
-	ErrExists      = errors.New("exists")
-	ErrNotFound    = errors.New("not found")
-	ErrNotOwner    = errors.New("not owner")
-	ErrInvalidJson = errors.New("invalid json")
+	ErrExists         = NewError("exists")
+	ErrNotFound       = NewError("not found")
+	ErrNotOwner       = NewError("not owner")
+	ErrInvalidJson    = NewError("invalid json")
+	ErrNotImplemented = NewError("not implemented")
+)
+
+// Errors from the underlying database connection.
+var (
+	ErrTemporary  = NewError("temporary database error")
+	ErrTimeout    = NewError("database timeout")
+	ErrConnection = NewError("database connection error")
 )
 
 // handleError catches some psql errors the application should know about and converts them to one of those defined above.
@@ -22,7 +46,7 @@ func handleError(err error) error {
 	}
 
 	// TODO: remove this
-	log.Printf("[DEBUG] error: %#v (%T)\n", err, err)
+	log.Printf("[DEBUG] error: %s (%#v; %T)\n", err, err, err)
 
 	// no rows
 	if err == pgx.ErrNoRows {
@@ -41,6 +65,17 @@ func handleError(err error) error {
 		}
 
 		return pgerr
+	}
+
+	// net connection error
+	if neterr, ok := err.(*net.OpError); ok {
+		if neterr.Temporary() {
+			return ErrTemporary
+		}
+		if neterr.Timeout() {
+			return ErrTimeout
+		}
+		return ErrConnection
 	}
 
 	// some other error, just pass on

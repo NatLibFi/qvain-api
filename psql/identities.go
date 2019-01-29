@@ -1,64 +1,50 @@
 package psql
 
 import (
+	"fmt"
+
 	"github.com/wvh/uuid"
 )
 
-// CreateIdentity creates an external identity. It does nothing if the external identity exists already.
-func (db *DB) CreateIdentity(id string) error {
-	tx, err := db.Begin()
+// RegisterIdentity takes an external service and identity and gets the corresponding application uid, creating it if necessary.
+// Returns either a UUID uid and a boolean indicating if the account has been newly created or an error.
+//
+// Note that while external ids are not guaranteed to be unique and might refer to multiple application users,
+// this function allows only unique registrations as it creates real (login) users mapped to external accounts.
+func (db *DB) RegisterIdentity(svc, id string) (uid uuid.UUID, isNew bool, err error) {
+	var tx *Tx
+
+	tx, err = db.Begin()
 	if err != nil {
-		return err
+		fmt.Println("ERROR:", err)
+		return uid, isNew, handleError(err)
 	}
 	defer tx.Rollback()
 
-	provisionalUuid, err := uuid.NewUUID()
+	// the database can't create our UIDs, so create one in case we need it
+	uid, err = uuid.NewUUID()
 	if err != nil {
-		return err
+		//return uid, isNew, err
+		return
 	}
 
-	_, err = tx.Exec(`INSERT INTO users (uid, extid) VALUES ($2, $1) ON CONFLICT (extid) DO NOTHING`, id, provisionalUuid)
+	err = tx.QueryRow(`SELECT uid, is_new FROM register_identity($1, $2, $3)`, uid.Array(), svc, id).Scan(uid.Array(), &isNew)
 	if err != nil {
-		return handleError(err)
+		return uid, isNew, handleError(err)
 	}
 
-	return tx.Commit()
+	return uid, isNew, tx.Commit()
 }
 
-
-// CreateOrGetIdentity creates an external identity if it doesn't exist already and returns the internal UUID id.
-func (db *DB) CreateOrGetIdentity(id string) (uuid.UUID, error) {
-	var newUuid uuid.UUID
-
-	tx, err := db.Begin()
+// GetUidForIdentity gets the application uid for a given external service and identity.
+//
+// Note that identities need not be unique, though those used for login ought to be.
+func (db *DB) GetUidForIdentity(svc, id string) (uid uuid.UUID, err error) {
+	// typecast is necessary for Postgresql to know the data type of variadic arguments in prepared statements
+	err = db.pool.QueryRow(`SELECT uid FROM identities WHERE extids @> jsonb_build_object($1::text, $2::text)`, svc, id).Scan(uid.Array())
 	if err != nil {
-		return newUuid, err
-	}
-	defer tx.Rollback()
-
-	provisionalUuid, err := uuid.NewUUID()
-	if err != nil {
-		return newUuid, err
+		return uid, handleError(err)
 	}
 
-	err = tx.QueryRow(`
-		WITH existing AS (
-			SELECT uid FROM identities WHERE extid=$1
-		), inserted AS (
-			INSERT INTO users (uid, extid) VALUES ($2, $1)
-			ON CONFLICT (extid) DO NOTHING
-			RETURNING uid
-		)
-		SELECT uid
-		FROM existing
-		UNION ALL
-		SELECT uid
-		FROM inserted`,
-		id, provisionalUuid).Scan(newUuid)
-
-	if err != nil {
-		return newUuid, handleError(err)
-	}
-
-	return newUuid, tx.Commit()
+	return uid, nil
 }

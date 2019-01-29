@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// DefaultPoolAcquireTimeout is the duration pgx waits for a connection to become available from the pool.
+const DefaultPoolAcquireTimeout = 10 * time.Second
+
+// DB holds the database methods and configuration.
 type DB struct {
 	config *pgx.ConnConfig
 	//poolConfig *pgx.ConnPoolConfig
@@ -16,39 +20,57 @@ type DB struct {
 	logger zerolog.Logger
 }
 
-// NewService returns a database handle with the requested configuration.
+// NewService returns a database handle configured with the given connection string.
 // It does not try to connect.
-func NewService(connString string) (*DB, error) {
+func NewService(connString string) (db *DB, err error) {
 	connConfig, err := pgx.ParseConnectionString(connString)
 	if err != nil {
 		return nil, err
 	}
-	return &DB{config: &connConfig}, nil
+
+	db = newService(&connConfig)
+	return
 }
 
-// NewPoolService calls NewService and initialises the connection pool.
+// newService is the actual constructor that takes a ConnConfig populated by the calling function in whatever way.
+func newService(config *pgx.ConnConfig) (db *DB) {
+	db = &DB{
+		config: config,
+		logger: zerolog.Nop(),
+	}
+	if true {
+		// self-referential, should be ok with the garbage collector...
+		db.config.Logger = db
+	}
+	return
+}
+
+// NewPoolService creates a psql service from a connection string and initialises the connection pool.
 func NewPoolService(connString string) (db *DB, err error) {
-	db, err = NewService(connString)
+	connConfig, err := pgx.ParseConnectionString(connString)
 	if err != nil {
-		return
+		return nil, err
 	}
 
+	db = newService(&connConfig)
 	err = db.InitPool()
 	return
 }
 
+// NewPoolService creates a psql service using environment variables and initialises the connection pool.
 func NewPoolServiceFromEnv() (db *DB, err error) {
 	connConfig, err := pgx.ParseEnvLibpq()
 	if err != nil {
 		return nil, err
 	}
-	db = &DB{config: &connConfig}
 
+	db = newService(&connConfig)
 	err = db.InitPool()
 	return
 }
 
 // SetLogger assigns a zerolog logger to the database service.
+// It is not safe to call this function after initialisation.
 func (psql *DB) SetLogger(logger zerolog.Logger) {
 	psql.logger = logger
 }
@@ -69,11 +91,10 @@ func (psql *DB) MustConnect() *pgx.Conn {
 
 // InitPool initialises a pool with default settings on the database object.
 func (psql *DB) InitPool() (err error) {
+	// default MaxConnections: 5
 	psql.pool, err = pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig: *psql.config,
-		//MaxConnections int,            // 5: default
-		//AfterConnect func(*Conn) error // function to call on connect
-		//AcquireTimeout time.Duration   // busy timeout
+		ConnConfig:     *psql.config,
+		AcquireTimeout: DefaultPoolAcquireTimeout,
 	})
 	return err
 }
@@ -109,4 +130,26 @@ func (psql *DB) Check() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	return conn.Ping(ctx)
+}
+
+func (psql *DB) Log(plevel pgx.LogLevel, msg string, data map[string]interface{}) {
+	var zlevel zerolog.Level
+
+	switch plevel {
+	case pgx.LogLevelNone:
+		zlevel = zerolog.NoLevel
+	case pgx.LogLevelError:
+		zlevel = zerolog.ErrorLevel
+	case pgx.LogLevelWarn:
+		zlevel = zerolog.WarnLevel
+	case pgx.LogLevelInfo:
+		zlevel = zerolog.InfoLevel
+	case pgx.LogLevelDebug:
+		zlevel = zerolog.DebugLevel
+	default:
+		zlevel = zerolog.DebugLevel
+	}
+
+	pgxlog := psql.logger.With().Fields(data).Logger()
+	pgxlog.WithLevel(zlevel).Msg(msg)
 }
