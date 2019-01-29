@@ -1,32 +1,53 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"os"
 
-	"github.com/NatLibFi/qvain-api/env"
-	"github.com/NatLibFi/qvain-api/psql"
 	"github.com/rs/zerolog"
+
+	"github.com/NatLibFi/qvain-api/env"
+	"github.com/NatLibFi/qvain-api/internal/jwt"
+	"github.com/NatLibFi/qvain-api/internal/secmsg"
+	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/sessions"
 )
 
 // Config holds the configuration for the application.
 // It's probably not safe to change settings during operation as they might have already have been injected into components.
 type Config struct {
+	// application settings
 	Hostname      string
 	Port          string
 	Standalone    bool
 	ForceHttpOnly bool
 	Debug         bool
+	DevMode       bool
+	Logging       bool
+	LogRequests   bool
 	UseHttpErrors bool
 	Logger        zerolog.Logger
 
+	// Metax service related settings
+	MetaxApiHost string
+	metaxApiUser string
+	metaxApiPass string
+
+	// session settings
 	tokenKey         []byte
+	oidcProviderName string
+	oidcProviderUrl  string
 	oidcClientID     string
 	oidcClientSecret string
-	oidcProviderUrl  string
 
-	db *psql.DB
+	// configured service instances
+	db        *psql.DB
+	sessions  *sessions.Manager
+	tokens    *jwt.JwtHandler
+	messenger *secmsg.MessageService
 }
 
 // ConfigFromEnv() creates the application configuration by reading in environment variables.
@@ -43,22 +64,47 @@ func ConfigFromEnv() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid token key: %s", err)
 	}
-	if len(key) < 1 {
-		return nil, fmt.Errorf("no token key set in environment")
+
+	if *appDevMode {
+		*appDebug = true
+		*forceHttpOnly = true
+
+		// slight hack: if in dev mode, set default API headers to include CORS allow all
+		enableCORS()
+
+		// create fake session
+		if env.Get("APP_DEV_USER") != "" {
+			b, err := base64.StdEncoding.WithPadding(base64.NoPadding).DecodeString(env.Get("APP_DEV_USER"))
+			if err != nil {
+				return nil, fmt.Errorf("can't decode APP_DEV_USER: %s", err)
+			}
+			//fmt.Printf("decoded: %s\n", b)
+			var user models.User
+			user.UnmarshalJSON(b)
+			//fmt.Printf("%+v\n", user)
+		}
 	}
 
 	return &Config{
-		Hostname:         hostname,
-		Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+		Hostname: hostname,
+		//Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+		Port:             *appHttpPort,
 		Standalone:       env.GetBool("APP_HTTP_STANDALONE"),
 		ForceHttpOnly:    *forceHttpOnly,
 		Debug:            *appDebug,
-		Logger:           createAppLogger(*appDebug),
+		DevMode:          *appDevMode,
+		Logging:          !*disableLogging,
+		LogRequests:      !*disableHttpLog,
+		Logger:           createAppLogger(ServiceName, *appDebug, *disableLogging),
 		UseHttpErrors:    env.GetBool("APP_HTTP_ERRORS"),
 		tokenKey:         key,
+		oidcProviderName: env.Get("APP_OIDC_PROVIDER_NAME"),
+		oidcProviderUrl:  env.Get("APP_OIDC_PROVIDER_URL"),
 		oidcClientID:     env.Get("APP_OIDC_CLIENT_ID"),
 		oidcClientSecret: env.Get("APP_OIDC_CLIENT_SECRET"),
-		oidcProviderUrl:  env.Get("APP_OIDC_PROVIDER_URL"),
+		MetaxApiHost:     env.Get("APP_METAX_API_HOST"),
+		metaxApiUser:     env.Get("APP_METAX_API_USER"),
+		metaxApiPass:     env.Get("APP_METAX_API_PASS"),
 	}, nil
 }
 
@@ -75,6 +121,27 @@ func (config *Config) initDB(logger zerolog.Logger) (err error) {
 	}
 	return err
 }
+
+// initSessions initialises the session manager.
+func (config *Config) initSessions() error {
+	config.sessions = sessions.NewManager()
+	return nil
+}
+
+// initTokens initialises the token service.
+func (config *Config) initTokens() {
+	config.tokens = jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
+}
+
+// initMessenger initialises the secure message service.
+func (config *Config) initMessenger() (err error) {
+	config.messenger, err = secmsg.NewMessageService(config.tokenKey)
+	return
+}
+
+// NewMetaxService initialises a metax service.
+// TODO: worth putting it here?
+//func (config *Config) NewMetaxService() *metax.MetaxService {}
 
 // getHostname gets the HTTP hostname from the environment or os, and returns an error on failure.
 // The hostname is used as vhost in http and in token audience checks, so it is important to get this right.
@@ -103,9 +170,17 @@ func getScheme() string {
 
 // getTokenKey gets the token secret in hex from the environment and decodes it.
 func getTokenKey() ([]byte, error) {
-	key, err := hex.DecodeString(env.Get("APP_TOKEN_KEY"))
+	encoded := env.Get("APP_TOKEN_KEY")
+	if encoded == "" {
+		return nil, fmt.Errorf("no token key set in environment")
+	}
+
+	key, err := hex.DecodeString(encoded)
 	if err != nil {
 		return nil, err
+	}
+	if len(key) < 32 {
+		return nil, fmt.Errorf("token key too short, expected at least 32 bytes")
 	}
 	return key, nil
 }
