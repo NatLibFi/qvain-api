@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/NatLibFi/qvain-api/redis"
-	redigo "github.com/garyburd/redigo/redis" // real redis package, for helper functions
+	redigo "github.com/gomodule/redigo/redis" // real redis package, for helper functions
 )
 
 const REDIS_NETWORK = "unix"
