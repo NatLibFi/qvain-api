@@ -51,7 +51,7 @@ func genRandomBytes(n int) (*Key, error) {
 
 	_, err := rand.Read(key)
 	if err != nil {
-		return &Key{}, fmt.Errorf("error generating random key:", err)
+		return &Key{}, fmt.Errorf("error generating random key: %s", err)
 	}
 	return &key, nil
 }
