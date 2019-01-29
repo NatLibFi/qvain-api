@@ -32,11 +32,11 @@ fi
 
 	### Imports (directly imported packages)
 	
-	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Imports}}{{.}} {{end}}' ./...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
+	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Imports}}{{.}} {{end}}' ./cmd/...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
 
 	### Dependencies (packages required by imported packages)
 	
-	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Deps}}{{.}} {{end}}' ./...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
+	$(go list -f '{{if not .Standard}}{{.ImportPath}}{{end}}' $(go list -f '{{range .Deps}}{{.}} {{end}}' ./cmd/...) | grep -vE "^${SELF}/|/internal$" | sort | ${PREFIXCMD} || echo "error generating list")
 
 	-- 
 	generated on $(date "+%Y-%m-%d") at commit $(git describe --always || echo "_unknown_") by ${0##*/}
