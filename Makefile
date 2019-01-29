@@ -12,7 +12,7 @@ SOURCELINK := ${GOBIN}/sourcelink
 MINIFY := $(shell command -v minify 2>/dev/null)
 
 # VCS
-TAG := $(shell git describe --always 2>/dev/null)
+TAG := $(shell git describe --tags --always --dirty="-dev" 2>/dev/null)
 HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 REPO := $(shell git ls-remote --get-url 2>/dev/null)
@@ -21,6 +21,8 @@ VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./version)
 
 # collect VCS info for linker
 LDFLAGS := "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH) -X $(VERSION_PACKAGE).CommitRepo=$(REPOLINK)"
+
+RELEASEDIR=$(PWD)/release
 
 #IMPORT_PATH := $(shell go list -f '{{.ImportPath}}' .)
 #BINARY := $(notdir $(IMPORT_PATH))
@@ -94,7 +96,15 @@ prebuild: $(SOURCELINK)
 #	@$(eval REPOLINK=$(shell test -x ${GOBIN}/sourcelink && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo ""))
 	@echo ran prebuild requirements
 
-release: all doc
+release: listall minify doc
+	@$(eval BUILDDIR=$(RELEASEDIR)/$(TAG))
+	echo building release $(TAG) in $(BUILDDIR)
+	mkdir -p $(BUILDDIR)/{bin,doc,schema}
+	@env GOBIN=$(BUILDDIR)/bin $(GO) install -v -ldflags $(LDFLAGS) ./cmd/...
+	cp -auvf doc/* $(BUILDDIR)/doc
+	cp -auvf schema/* $(BUILDDIR)/schema
+	ln -sfn $(BUILDDIR) $(RELEASEDIR)/stable
+	ln -sfn $(BUILDDIR) $(RELEASEDIR)/testing
 
 cloc:
 	cloc --exclude-dir=vendor .
