@@ -1,0 +1,175 @@
+package shared
+
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/NatLibFi/qvain-api/metax"
+	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/psql"
+
+	"github.com/wvh/uuid"
+)
+
+var owner = uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18")
+
+func readFile(t *testing.T, fn string) []byte {
+	path := filepath.Join("..", "..", "metax", "testdata", fn)
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bytes
+}
+
+func modifyTitleFromDataset(db *psql.DB, id uuid.UUID, title string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	ct, err := tx.Exec("UPDATE datasets SET blob = jsonb_set(blob, '{research_dataset,title,en}', to_jsonb($2::text)), modified = now() WHERE id = $1", id.Array(), title)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return psql.ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+func deleteFilesFromDataset(db *psql.DB, id uuid.UUID) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	ct, err := tx.Exec("UPDATE datasets SET blob = blob #- '{research_dataset,files}', modified = now() WHERE id = $1", id.Array())
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return psql.ErrNotFound
+	}
+
+	return tx.Commit()
+}
+
+// TestPublish creates a Qvain dataset, saves it, publishes it to metax, and saves the resulting version.
+func TestPublish(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode")
+	}
+
+	tests := []struct {
+		fn string
+	}{
+		{
+			fn: "unpublished.json",
+		},
+	}
+
+	db, err := psql.NewPoolServiceFromEnv()
+	if err != nil {
+		t.Fatal("psql:", err)
+	}
+
+	api := metax.NewMetaxService(os.Getenv("APP_METAX_API_HOST"), metax.WithCredentials(os.Getenv("APP_METAX_API_USER"), os.Getenv("APP_METAX_API_PASS")))
+
+	for _, test := range tests {
+		blob := readFile(t, test.fn)
+
+		dataset, err := models.NewDataset(owner)
+		if err != nil {
+			t.Fatal("models.NewDataset():", err)
+		}
+		dataset.SetData(2, metax.SchemaIda, blob)
+
+		id := dataset.Id
+
+		err = db.Store(dataset)
+		if err != nil {
+			t.Fatal("db.Store():", err)
+		}
+		//defer db.Delete(id, nil)
+
+		var versionId string
+
+		t.Run(test.fn+"(new)", func(t *testing.T) {
+			vId, nId, err := Publish(api, db, id, owner)
+			if err != nil {
+				if apiErr, ok := err.(*metax.ApiError); ok {
+					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
+				}
+				t.Error("error:", err)
+			}
+
+			if nId != "" {
+				t.Errorf("API created a new version: expected %q, got %q", "", nId)
+			}
+
+			t.Logf("published with version id %q", vId)
+			versionId = vId
+		})
+
+		err = modifyTitleFromDataset(db, id, "Less Wonderful Title")
+		if err != nil {
+			t.Fatal("modifyTitleFromDataset():", err)
+		}
+
+		t.Run(test.fn+"(update)", func(t *testing.T) {
+			vId, nId, err := Publish(api, db, id, owner)
+			if err != nil {
+				if apiErr, ok := err.(*metax.ApiError); ok {
+					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
+				}
+				t.Error("error:", err)
+			}
+
+			if nId != "" {
+				t.Errorf("API created a new version: expected %q, got %q", "", nId)
+			}
+
+			if vId != versionId {
+				t.Errorf("API version id changed: expected %q, got %q", versionId, vId)
+			}
+
+			t.Logf("(re)published with version id %q", vId)
+		})
+
+		err = deleteFilesFromDataset(db, id)
+		if err != nil {
+			t.Fatal("deleteFilesFromDataset():", err)
+		}
+
+		t.Run(test.fn+"(files)", func(t *testing.T) {
+			vId, nId, err := Publish(api, db, id, owner)
+			if err != nil {
+				if apiErr, ok := err.(*metax.ApiError); ok {
+					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
+				}
+				t.Error("error:", err)
+			}
+
+			if vId != versionId {
+				t.Errorf("API version id changed: expected %q, got %q", versionId, vId)
+			}
+
+			if nId == "" {
+				t.Errorf("API didn't create a new version: expected identifier, got %q", nId)
+			} else {
+				t.Logf("created new version with id %q", nId)
+			}
+
+			t.Logf("(re)published with version id %q", vId)
+		})
+
+	}
+}
