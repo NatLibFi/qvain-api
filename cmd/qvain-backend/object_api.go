@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/rs/zerolog"
 	"github.com/wvh/uuid"
 )

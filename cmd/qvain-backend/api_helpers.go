@@ -5,9 +5,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/NatLibFi/qvain-api/psql"
-	"github.com/NatLibFi/qvain-api/sessions"
-	"github.com/NatLibFi/qvain-api/version"
+	"github.com/NatLibFi/qvain-api/internal/psql"
+	"github.com/NatLibFi/qvain-api/internal/sessions"
+	"github.com/NatLibFi/qvain-api/internal/version"
 
 	"github.com/francoispqt/gojay"
 	"github.com/wvh/uuid"

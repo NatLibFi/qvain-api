@@ -10,7 +10,7 @@ import (
 
 	"github.com/NatLibFi/qvain-api/env"
 	//"github.com/NatLibFi/qvain-api/internal/jwt"
-	"github.com/NatLibFi/qvain-api/version"
+	"github.com/NatLibFi/qvain-api/internal/version"
 )
 
 const (

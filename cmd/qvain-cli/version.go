@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/NatLibFi/qvain-api/psql"
+	"github.com/NatLibFi/qvain-api/internal/psql"
 )
 
 func runPgVersion(psql *psql.DB, args []string) error {

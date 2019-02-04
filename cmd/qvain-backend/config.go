@@ -10,10 +10,10 @@ import (
 
 	"github.com/NatLibFi/qvain-api/env"
 	"github.com/NatLibFi/qvain-api/internal/jwt"
+	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/internal/secmsg"
+	"github.com/NatLibFi/qvain-api/internal/sessions"
 	"github.com/NatLibFi/qvain-api/models"
-	"github.com/NatLibFi/qvain-api/psql"
-	"github.com/NatLibFi/qvain-api/sessions"
 )
 
 // Config holds the configuration for the application.

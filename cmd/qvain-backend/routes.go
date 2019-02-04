@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/NatLibFi/qvain-api/internal/jwt"
-	"github.com/NatLibFi/qvain-api/oidc"
-	"github.com/NatLibFi/qvain-api/orcid"
+	"github.com/NatLibFi/qvain-api/internal/oidc"
+	"github.com/NatLibFi/qvain-api/internal/orcid"
 )
 
 // makeMux sets up the default handlers and returns a mux that can also be used for testing.

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	//"github.com/NatLibFi/qvain-api/internal/jwt"
-	"github.com/NatLibFi/qvain-api/oidc"
+	"github.com/NatLibFi/qvain-api/internal/oidc"
 	//"github.com/NatLibFi/qvain-api/orcid"
 
 	"github.com/francoispqt/gojay"

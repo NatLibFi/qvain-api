@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NatLibFi/qvain-api/internal/psql"
+	"github.com/NatLibFi/qvain-api/internal/sessions"
 	"github.com/NatLibFi/qvain-api/models"
-	"github.com/NatLibFi/qvain-api/psql"
-	"github.com/NatLibFi/qvain-api/sessions"
-	"github.com/rs/zerolog"
 
 	gooidc "github.com/coreos/go-oidc"
+	"github.com/rs/zerolog"
 	"golang.org/x/oauth2"
 )
 
