@@ -9,16 +9,17 @@ import (
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/metax"
 	"github.com/NatLibFi/qvain-api/models"
+
 	"github.com/wvh/uuid"
 )
 
 var owner = uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18")
 
-func readFile(t *testing.T, fn string) []byte {
+func readFile(tb testing.TB, fn string) []byte {
 	path := filepath.Join("..", "..", "metax", "testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return bytes
 }
