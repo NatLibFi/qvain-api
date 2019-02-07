@@ -392,13 +392,14 @@ func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
 
 func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	var (
+		valid  *bool
 		family *int
 		schema *string
 		blob   []byte
 	)
 
 	res := new(models.Dataset)
-	err := db.pool.QueryRow("select id, creator, owner, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &family, &schema, &blob)
+	err := db.pool.QueryRow("select id, creator, owner, valid, family, schema, blob from datasets where id=$1", id.Array()).Scan(res.Id.Array(), res.Creator.Array(), res.Owner.Array(), &valid, &family, &schema, &blob)
 	if err != nil {
 		return nil, handleError(err)
 	}
@@ -407,6 +408,8 @@ func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	res.SetValid(*valid)
 
 	return res, nil
 }
