@@ -80,6 +80,63 @@ func (tx *Tx) Store(dataset *models.Dataset) error {
 	return nil
 }
 
+// StoreNewVersion inserts a new version of an existing dataset, copying most fields.
+func (tx *Tx) StoreNewVersion(basedOn uuid.UUID, id uuid.UUID, created time.Time, blob []byte) error {
+	tag, err := tx.Exec(`
+	INSERT INTO datasets (id, creator, owner, created, synced, published, valid, family, schema, blob)
+		SELECT $2, creator, owner, $3, now(), true, true, family, schema, $4
+		FROM datasets
+		WHERE id = $1
+	`, basedOn.Array(), id.Array(), created, blob)
+	if err != nil {
+		return err
+	}
+
+	// if the SELECT doesn't match any record (no parent), INSERT will return 0 (inserted records)
+	if tag.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// WithTransaction abstracts some of the database logic by wrapping Tx methods.
+//
+// example:
+// 	db.WithTransaction(func(tx psql.Tx) error {
+// 		return tx.StoreNewVersion(id, parent, created, blob)
+// 	})
+func (db *DB) WithTransaction(f func(tx *Tx) error) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = f(tx)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
+// StoreNewVersion wraps a StoreNewVersion transaction.
+func (db *DB) StoreNewVersion(id uuid.UUID, basedOn uuid.UUID, created time.Time, blob []byte) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = tx.StoreNewVersion(id, basedOn, created, blob)
+	if err != nil {
+		return handleError(err)
+	}
+
+	return tx.Commit()
+}
+
 func (db *DB) Update(id uuid.UUID, blob []byte) error {
 	tx, err := db.Begin()
 	if err != nil {

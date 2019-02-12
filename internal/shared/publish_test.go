@@ -103,7 +103,7 @@ func TestPublish(t *testing.T) {
 		var versionId string
 
 		t.Run(test.fn+"(new)", func(t *testing.T) {
-			vId, nId, err := Publish(api, db, id, owner)
+			vId, nId, _, err := Publish(api, db, id, owner)
 			if err != nil {
 				if apiErr, ok := err.(*metax.ApiError); ok {
 					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
@@ -125,7 +125,7 @@ func TestPublish(t *testing.T) {
 		}
 
 		t.Run(test.fn+"(update)", func(t *testing.T) {
-			vId, nId, err := Publish(api, db, id, owner)
+			vId, nId, _, err := Publish(api, db, id, owner)
 			if err != nil {
 				if apiErr, ok := err.(*metax.ApiError); ok {
 					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
@@ -150,7 +150,7 @@ func TestPublish(t *testing.T) {
 		}
 
 		t.Run(test.fn+"(files)", func(t *testing.T) {
-			vId, nId, err := Publish(api, db, id, owner)
+			vId, nId, qId, err := Publish(api, db, id, owner)
 			if err != nil {
 				if apiErr, ok := err.(*metax.ApiError); ok {
 					t.Errorf("API error: [%d] %s", apiErr.StatusCode(), apiErr.Error())
@@ -165,7 +165,7 @@ func TestPublish(t *testing.T) {
 			if nId == "" {
 				t.Errorf("API didn't create a new version: expected identifier, got %q", nId)
 			} else {
-				t.Logf("created new version with id %q", nId)
+				t.Logf("created new version with metax id %q and qvain id %q", nId, qId)
 			}
 
 			t.Logf("(re)published with version id %q", vId)

@@ -20,7 +20,7 @@ var (
 // Publish stores a dataset in Metax and updates the Qvain database.
 // It returns the Metax identifier for the dataset, the new version idenifier if such was created, and an error.
 // The error returned can be a Metax ApiError, a Qvain database error, or a basic Go error.
-func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID) (versionId string, newVersionId string, err error) {
+func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID) (versionId string, newVersionId string, newQVersionId *uuid.UUID, err error) {
 	/*
 		tx, err := db.Begin()
 		if err != nil {
@@ -61,7 +61,7 @@ func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID
 
 	versionId = metax.GetIdentifier(res)
 	if versionId == "" {
-		return "", "", ErrNoIdentifier
+		return "", "", nil, ErrNoIdentifier
 	}
 
 	err = db.StorePublished(id, res)
@@ -80,13 +80,33 @@ func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID
 
 	if newVersionId = metax.MaybeNewVersionId(res); newVersionId != "" {
 		fmt.Println("created new version:", newVersionId)
-		newVersion, err := api.GetId(newVersionId)
+
+		var newVersion []byte
+		// get the new version from the Metax api
+		newVersion, err = api.GetId(newVersionId)
 		if err != nil {
 			fmt.Println("error getting new version:", err)
 			//return err
-			return versionId, newVersionId, err
+			return versionId, newVersionId, nil, err
 		}
 		fmt.Printf("new: %s\n\n", newVersion)
+
+		// create a Qvain id for the new version
+		var tmp uuid.UUID
+		tmp, err = uuid.NewUUID()
+		if err != nil {
+			return
+		}
+		newQVersionId = &tmp
+
+		// store the new version
+		err = db.WithTransaction(func(tx *psql.Tx) error {
+			// TODO: get created time from HTTP header?
+			return tx.StoreNewVersion(id, *newQVersionId, time.Now(), newVersion)
+		})
+		if err != nil {
+			return
+		}
 	}
 
 	fmt.Fprintln(os.Stderr, "success")

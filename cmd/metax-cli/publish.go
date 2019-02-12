@@ -45,7 +45,7 @@ func runPublish(url string, args []string) error {
 
 	api := metax.NewMetaxService(os.Getenv("APP_METAX_API_HOST"), metax.WithCredentials(os.Getenv("APP_METAX_API_USER"), os.Getenv("APP_METAX_API_PASS")))
 
-	vId, nId, err := shared.Publish(api, db, id, owner.Get())
+	vId, nId, qId, err := shared.Publish(api, db, id, owner.Get())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "type: %T\n", err)
 		if apiErr, ok := err.(*metax.ApiError); ok {
@@ -61,6 +61,7 @@ func runPublish(url string, args []string) error {
 	fmt.Fprintln(os.Stderr, "metax identifier:", vId)
 	if nId != "" {
 		fmt.Fprintln(os.Stderr, "metax identifier (new version):", nId)
+		fmt.Fprintln(os.Stderr, "qvain identifier (new version):", qId)
 	}
 	return nil
 }

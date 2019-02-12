@@ -313,7 +313,7 @@ func (api *DatasetApi) updateDataset(w http.ResponseWriter, r *http.Request, own
 
 func (api *DatasetApi) publishDataset(w http.ResponseWriter, r *http.Request, owner uuid.UUID, id uuid.UUID) {
 	//owner = uuid.MustFromString("12345678-9012-3456-7890-123456789012")
-	vId, nId, err := shared.Publish(api.metax, api.db, id, owner)
+	vId, nId, qId, err := shared.Publish(api.metax, api.db, id, owner)
 	if err != nil {
 		switch t := err.(type) {
 		case *metax.ApiError:
@@ -329,7 +329,7 @@ func (api *DatasetApi) publishDataset(w http.ResponseWriter, r *http.Request, ow
 		return
 	}
 
-	api.Published(w, r, id, vId, nil, nId)
+	api.Published(w, r, id, vId, qId, nId)
 }
 
 func (api *DatasetApi) deleteDataset(w http.ResponseWriter, r *http.Request, owner uuid.UUID, id uuid.UUID) {
