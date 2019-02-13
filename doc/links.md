@@ -20,6 +20,7 @@ _links to Qvain related resources_
 - Qvain frontend:
   - [Github](https://github.com/NatLibFi/qvain-js) repository
 - [General overview](https://www.kiwi.fi/display/ATT/Technical+overview) at the National Library of Finland's [ATT/Tajua project wiki](https://www.kiwi.fi/pages/viewpage.action?pageId=53839580)
+- [Roadmap](https://github.com/NatLibFi/qvain-js/blob/next/doc/roadmap.md) including the what, why and how of Qvain
 
 
 ## Metax
