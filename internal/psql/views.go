@@ -20,10 +20,12 @@ func (db *DB) ViewDatasetsByOwner(owner uuid.UUID) (json.RawMessage, error) {
 		SELECT json_agg(result) "by_owner"
 		FROM (
 			SELECT id, owner, created, modified, seq, published,
-				blob#>'{research_dataset,identifier}' identifier,
+				blob#>'{identifier}' identifier,
 				blob#>'{research_dataset,title}' title,
 				blob#>'{research_dataset,description}' description,
 				blob#>'{preservation_state}' preservation_state,
+				blob#>'{previous_dataset_version,identifier}' previous,
+				blob#>'{next_dataset_version,identifier}' "next",
 				jsonb_array_length(coalesce(blob#>'{dataset_version_set}', '[]')) versions
 			FROM datasets
 			WHERE owner = $1
