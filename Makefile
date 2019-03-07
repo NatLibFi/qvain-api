@@ -17,7 +17,7 @@ HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
 REPO := $(shell git ls-remote --get-url 2>/dev/null)
 REPOLINK := $(shell test -x $(SOURCELINK) && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo)
-VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./version)
+VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./internal/version)
 
 # collect VCS info for linker
 LDFLAGS := "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH) -X $(VERSION_PACKAGE).CommitRepo=$(REPOLINK)"
