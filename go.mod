@@ -10,7 +10,7 @@ require (
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
 	github.com/felixge/httpsnoop v1.0.0
 	github.com/fernet/fernet-go v0.0.0-20180830025343-9eac43b88a5e
-	github.com/francoispqt/gojay v0.0.0-20190117044300-106fcfa8bda0
+	github.com/francoispqt/gojay v0.0.0-20190228132548-90d953358b68
 	github.com/gomodule/redigo v2.0.1-0.20181213210501-02dc2736dbc3+incompatible
 	github.com/jackc/fake v0.0.0-20150926172116-812a484cc733 // indirect
 	github.com/jackc/pgx v3.3.0+incompatible
@@ -27,7 +27,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7
-	github.com/rs/zerolog v1.11.1-0.20190103190423-aa55558e4cb2
+	github.com/rs/zerolog v1.12.0
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
