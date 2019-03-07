@@ -19,7 +19,7 @@ type locationHook struct {
 }
 
 func newLocationHook(name string) *locationHook {
-	return &locationHook{name: name, stackInfoFunc: caller.CreateStackInfoFunc(5, true)}
+	return &locationHook{name: name, stackInfoFunc: caller.CreateStackInfoFunc(4, true)}
 }
 
 func (h locationHook) Run(e *zerolog.Event, l zerolog.Level, msg string) {
@@ -42,7 +42,7 @@ func createAppLogger(service string, debugging bool, disabled bool) (logger zero
 	// use colour output if logging to console
 	if isatty.IsTerminal(os.Stdout.Fd()) {
 		zerolog.TimeFieldFormat = "15:04:05.000000"
-		out = zerolog.ConsoleWriter{Out: out}
+		out = zerolog.ConsoleWriter{Out: out, TimeFormat: "15:04:05.000000"}
 	}
 
 	if debugging {
