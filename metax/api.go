@@ -90,7 +90,7 @@ func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 	svc := &MetaxService{
 		host:      host,
 		logger:    zerolog.Nop(),
-		userAgent: "Go-http-client/" + runtime.Version(),
+		userAgent: "qvain (Go-http-client/" + runtime.Version() + ")",
 		client: &http.Client{
 			Timeout: 5 * time.Second,
 			Transport: &http.Transport{
@@ -191,9 +191,8 @@ func (api *MetaxService) getRequest(url string) (*http.Request, error) {
 
 func (api *MetaxService) Datasets(params ...DatasetOption) (*PaginatedResponse, error) {
 	req, err := http.NewRequest("GET", api.urlDatasets, nil)
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", api.userAgent)
+	//req.Header.Add("If-None-Match", `W/"example-tag"`)
+	api.writeApiHeaders(req)
 
 	for _, param := range params {
 		param(req)
@@ -274,9 +273,8 @@ func (api *MetaxService) drainBody(body io.ReadCloser) {
 
 func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, error) {
 	req, err := http.NewRequest("GET", api.urlDatasets+"?stream=true&no_pagination=true", nil)
-	//req.Header.Add("If-None-Match", `W/"wyzzy"`)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", api.userAgent)
+	//req.Header.Add("If-None-Match", `W/"example-tag"`)
+	api.writeApiHeaders(req)
 
 	for _, param := range params {
 		param(req)
@@ -353,8 +351,7 @@ func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, err
 
 func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...DatasetOption) (chan *MetaxRawRecord, chan error, error) {
 	req, err := http.NewRequest("GET", api.urlDatasets, nil)
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", api.userAgent)
+	api.writeApiHeaders(req)
 
 	for _, param := range params {
 		param(req)
