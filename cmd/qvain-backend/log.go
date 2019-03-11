@@ -19,7 +19,7 @@ type locationHook struct {
 }
 
 func newLocationHook(name string) *locationHook {
-	return &locationHook{name: name, stackInfoFunc: caller.CreateStackInfoFunc(4, true)}
+	return &locationHook{name: name, stackInfoFunc: caller.CreateStackInfoFunc(skipFrameCount, true)}
 }
 
 func (h locationHook) Run(e *zerolog.Event, l zerolog.Level, msg string) {
