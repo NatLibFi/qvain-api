@@ -151,6 +151,7 @@ func (api *MetaxService) UrlForId(id string) string {
 
 type DatasetOption func(*http.Request)
 
+// WithOwner is a dataset option that restricts dataset queries to the Qvain owner set in the dataset's editor object.
 func WithOwner(uid string) DatasetOption {
 	return func(req *http.Request) {
 		// NOTE: might need QueryEscape()
@@ -166,12 +167,26 @@ func WithOwner(uid string) DatasetOption {
 	}
 }
 
+// WithUser is a dataset option that filters dataset queries to those that have the given user identifier set in the dataset.
+func WithUser(id string) DatasetOption {
+	return func(req *http.Request) {
+		if id == "" {
+			return
+		}
+		qvals := req.URL.Query()
+		qvals.Add("metadata_provider_user", id)
+		req.URL.RawQuery = qvals.Encode()
+	}
+}
+
+// Since is a dataset option that adds an if-modified-since header to dataset queries.
 func Since(t time.Time) DatasetOption {
 	return func(req *http.Request) {
 		req.Header.Set("If-Modified-Since", t.UTC().Format(http.TimeFormat))
 	}
 }
 
+// WithStreaming forces the API to return a streaming response without pagination.
 func WithStreaming(req *http.Request) {
 	qvals := req.URL.Query()
 	qvals.Add("stream", "true")
@@ -271,6 +286,9 @@ func (api *MetaxService) drainBody(body io.ReadCloser) {
 	}
 }
 
+// ReadStream queries the dataset endpoint with an unpaged request.
+//
+// Deprecated: use ReadStreamChannel() for actual asynchronous stream processing.
 func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, error) {
 	req, err := http.NewRequest("GET", api.urlDatasets+"?stream=true&no_pagination=true", nil)
 	//req.Header.Add("If-None-Match", `W/"example-tag"`)
@@ -349,7 +367,10 @@ func (api *MetaxService) ReadStream(params ...DatasetOption) ([]MetaxRecord, err
 	return recs, nil
 }
 
-func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...DatasetOption) (chan *MetaxRawRecord, chan error, error) {
+// ReadStreamChannel queries the dataset endpoint streaming the resulting datasets asynchronously throught a channel.
+func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...DatasetOption) (int, chan *MetaxRawRecord, chan error, error) {
+	var count int
+
 	req, err := http.NewRequest("GET", api.urlDatasets, nil)
 	api.writeApiHeaders(req)
 
@@ -367,22 +388,22 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 
 	res, err := api.client.Do(req)
 	if err != nil {
-		return nil, nil, err
+		return count, nil, nil, err
 	}
 	// WARNING: go routine below is responsible for closing the response body
 
 	switch res.StatusCode {
 	case 200:
 	case 404:
-		return nil, nil, fmt.Errorf("error: not found (status: %d)", res.StatusCode)
+		return 0, nil, nil, fmt.Errorf("error: not found (status: %d)", res.StatusCode)
 	case 403:
-		return nil, nil, fmt.Errorf("error: forbidden (status: %d)", res.StatusCode)
+		return 0, nil, nil, fmt.Errorf("error: forbidden (status: %d)", res.StatusCode)
 	default:
-		return nil, nil, fmt.Errorf("error: can't retrieve record (status: %d)", res.StatusCode)
+		return 0, nil, nil, fmt.Errorf("error: can't retrieve record (status: %d)", res.StatusCode)
 	}
 
 	if !strings.HasPrefix(res.Header.Get("Content-Type"), "application/json") {
-		return nil, nil, fmt.Errorf("unknown content-type, expected json")
+		return 0, nil, nil, fmt.Errorf("unknown content-type, expected json")
 	}
 
 	if res.Header.Get("X-Count") == "" {
@@ -441,9 +462,10 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 		close(outc)
 	}(res.Body)
 
-	return outc, errc, nil
+	return count, outc, errc, nil
 }
 
+// writeApiHeaders sets default headers for API requests.
 func (api *MetaxService) writeApiHeaders(req *http.Request) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -451,6 +473,8 @@ func (api *MetaxService) writeApiHeaders(req *http.Request) {
 	req.SetBasicAuth(api.user, api.pass)
 }
 
+// Create makes new datasets at the API endpoint.
+// Deprecated: use Store().
 func (api *MetaxService) Create(ctx context.Context, blob json.RawMessage) (json.RawMessage, error) {
 	if blob == nil || len(blob) < 1 {
 		return nil, errEmptyDataset
@@ -597,6 +621,7 @@ func (api *MetaxService) Store(ctx context.Context, blob json.RawMessage) (json.
 	return nil, nil
 }
 
+// GetId queries the dataset endpoint for a dataset with the given id.
 func (api *MetaxService) GetId(id string) (json.RawMessage, error) {
 	req, err := http.NewRequest("GET", api.UrlForId(id), nil)
 	if err != nil {
@@ -633,6 +658,7 @@ func (api *MetaxService) GetId(id string) (json.RawMessage, error) {
 	return body, nil
 }
 
+/*
 func (api *MetaxService) ParseRecord(txt string) (*MetaxRecord, error) {
 	rec := new(MetaxRecord)
 	err := json.Unmarshal([]byte(txt), &rec)
@@ -665,3 +691,4 @@ func (api *MetaxService) ParseList(txt string) (*PaginatedResponse, error) {
 	}
 	return list, nil
 }
+*/
