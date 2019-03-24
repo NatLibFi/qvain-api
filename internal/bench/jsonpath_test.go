@@ -1,4 +1,4 @@
-package metax
+package main
 
 import (
 	"bytes"
@@ -14,13 +14,30 @@ import (
 	"github.com/valyala/fastjson"
 )
 
+/*
+  BenchmarkGetIdentifier/jsonparser-4             10000000               179 ns/op              64 B/op          1 allocs/op
+  BenchmarkGetIdentifier/gjson-4                  10000000               180 ns/op              64 B/op          1 allocs/op
+  BenchmarkGetIdentifier/fastjson-4                 300000              4685 ns/op              64 B/op          1 allocs/op
+  BenchmarkGetIdentifier/fastjsonReuse-4            300000              4673 ns/op              64 B/op          1 allocs/op
+  BenchmarkGetIdentifier/stdlib-4                    50000             35246 ns/op             360 B/op          7 allocs/op
+  BenchmarkGetIdentifier/gojay-decoder-4            200000              6809 ns/op            7761 B/op          7 allocs/op
+  BenchmarkGetIdentifier/gojay-unmarshal-4         1000000              1147 ns/op            4112 B/op          2 allocs/op
+  BenchmarkGetIdentifiers/jsonparser-4              200000              6272 ns/op             336 B/op          8 allocs/op
+  BenchmarkGetIdentifiers/gjson-4                   200000              7922 ns/op             352 B/op          4 allocs/op
+  BenchmarkGetIdentifiers/fastjson-4                100000             22257 ns/op           34736 B/op        102 allocs/op
+  BenchmarkGetIdentifiers/fastjsonReuse-4           300000              4865 ns/op             160 B/op          3 allocs/op
+  BenchmarkGetIdentifiers/stdlib-4                   50000             36650 ns/op             488 B/op          9 allocs/op
+  BenchmarkGetIdentifiers/gojay-decoder-4           200000              7598 ns/op            7841 B/op         11 allocs/op
+  BenchmarkGetIdentifiers/gojay-unmarshal-4         200000              5447 ns/op            4144 B/op          2 allocs/op
+*/
+
 const testDatasetFile = "new_created.json"
 
 // fastjsonParser re-uses an existing parser instead of creating a new instance every time.
 var fastjsonParser fastjson.Parser
 
 func readFile(t *testing.T, fn string) []byte {
-	path := filepath.Join("..", "metax", "testdata", fn)
+	path := filepath.Join("..", "..", "metax", "testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
