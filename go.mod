@@ -6,8 +6,9 @@ require (
 	github.com/cockroachdb/apd v1.1.0 // indirect
 	github.com/coreos/go-oidc v2.0.0+incompatible
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgraph-io/badger v1.5.4
+	github.com/dgraph-io/badger v2.0.0-rc.2+incompatible
 	github.com/dgryski/go-farm v0.0.0-20180109070241-2de33835d102 // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.0
 	github.com/fernet/fernet-go v0.0.0-20180830025343-9eac43b88a5e
 	github.com/francoispqt/gojay v0.0.0-20190228132548-90d953358b68
@@ -30,7 +31,11 @@ require (
 	github.com/rs/zerolog v1.12.0
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24 // indirect
+	github.com/spf13/cobra v0.0.3 // indirect
+	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
+	github.com/tdewolff/minify v2.3.6+incompatible // indirect
+	github.com/tdewolff/parse v2.3.4+incompatible // indirect
 	github.com/tidwall/gjson v1.1.5
 	github.com/tidwall/match v0.0.0-20171002075945-1731857f09b1 // indirect
 	github.com/valyala/fastjson v1.0.0
