@@ -48,3 +48,13 @@ func (db *DB) GetUidForIdentity(svc, id string) (uid uuid.UUID, err error) {
 
 	return uid, nil
 }
+
+// GetIdentityForUid gets the identity for a given uid and service.
+func (db *DB) GetIdentityForUid(svc string, uid uuid.UUID) (id string, err error) {
+	err = db.pool.QueryRow(`SELECT extids->>$1 FROM identities WHERE uid = $2`, svc, uid.Array()).Scan(&id)
+	if err != nil {
+		return "", err
+	}
+
+	return id, nil
+}
