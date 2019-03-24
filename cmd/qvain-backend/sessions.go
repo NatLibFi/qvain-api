@@ -7,6 +7,8 @@ import (
 
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/internal/sessions"
+	"github.com/NatLibFi/qvain-api/internal/shared"
+	"github.com/NatLibFi/qvain-api/metax"
 	"github.com/NatLibFi/qvain-api/models"
 
 	gooidc "github.com/coreos/go-oidc"
@@ -44,7 +46,7 @@ func MakeSessionHandlerForExternalService(mgr *sessions.Manager, db *psql.DB, lo
 
 // MakeSessionHandlerForFairdata is a callback function for the OIDC callback handler to glue token data and our own database to create a user session.
 // This particular version handles token fields specific to the Fairdata authentication proxy; see also generic version above.
-func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, logger zerolog.Logger, svc string) func(http.ResponseWriter, *http.Request, *oauth2.Token, *gooidc.IDToken) error {
+func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin loginHook, logger zerolog.Logger, svc string) func(http.ResponseWriter, *http.Request, *oauth2.Token, *gooidc.IDToken) error {
 	return func(w http.ResponseWriter, r *http.Request, oauthToken *oauth2.Token, idToken *gooidc.IDToken) error {
 		logger.Debug().Str("svc", svc).Str("identity", idToken.Subject).Msg("session callback called")
 		uid, isNew, err := db.RegisterIdentity(svc, idToken.Subject)
@@ -99,7 +101,19 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, logger ze
 
 		// TODO: remove sid
 		logger.Info().Str("svc", svc).Str("identity", idToken.Subject).Str("uid", uid.String()).Bool("new", isNew).Str("sid", sid).Msg("new session")
+		if onLogin != nil {
+			go onLogin(user)
+		}
+
 		return nil
+	}
+}
+
+type loginHook func(*models.User) error
+
+func makeOnFairdataLogin(metax *metax.MetaxService, db *psql.DB, logger zerolog.Logger) loginHook {
+	return func(user *models.User) error {
+		return shared.Fetch(metax, db, logger, user.Uid, user.Identity)
 	}
 }
 

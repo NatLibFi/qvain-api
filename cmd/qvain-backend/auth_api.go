@@ -26,7 +26,7 @@ type AuthApi struct {
 //
 // TODO: Too hard-coded: right now the OIDC configuration is flat; perhaps come up with better,
 // more dynamic config that allows more than one provider.
-func NewAuthApi(config *Config, logger zerolog.Logger) *AuthApi {
+func NewAuthApi(config *Config, onLogin loginHook, logger zerolog.Logger) *AuthApi {
 	api := AuthApi{
 		logger: logger,
 	}
@@ -49,7 +49,7 @@ func NewAuthApi(config *Config, logger zerolog.Logger) *AuthApi {
 	} else {
 		oidcClient.SetLogger(oidcLogger)
 		//oidcClient.OnLogin = MakeSessionHandlerForExternalService(config.sessions, config.db, config.Logger, "fd")
-		oidcClient.OnLogin = MakeSessionHandlerForFairdata(config.sessions, config.db, config.Logger, config.oidcProviderName)
+		oidcClient.OnLogin = MakeSessionHandlerForFairdata(config.sessions, config.db, onLogin, config.Logger, config.oidcProviderName)
 		//mux.HandleFunc("/api/auth/login", oidcClient.Auth())
 		//mux.HandleFunc("/api/auth/cb", oidcClient.Callback())
 		api.oidc.client = oidcClient

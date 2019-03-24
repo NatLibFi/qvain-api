@@ -45,7 +45,7 @@ func makeMux(config *Config) *http.ServeMux {
 	} else {
 		oidcClient.SetLogger(oidcLogger)
 		//oidcClient.OnLogin = MakeSessionHandlerForExternalService(config.sessions, config.db, config.Logger, "fd")
-		oidcClient.OnLogin = MakeSessionHandlerForFairdata(config.sessions, config.db, config.Logger, "fd")
+		oidcClient.OnLogin = MakeSessionHandlerForFairdata(config.sessions, config.db, nil, config.Logger, "fd")
 		mux.HandleFunc("/api/auth/login", oidcClient.Auth())
 		mux.HandleFunc("/api/auth/cb", oidcClient.Callback())
 	}

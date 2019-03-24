@@ -58,7 +58,7 @@ func NewApis(config *Config) *Apis {
 	apis.objects = NewObjectApi(config.db, config.NewLogger("objects"))
 	apis.sessions = NewSessionApi(config.sessions, config.db, config.messenger, config.NewLogger("sessions"))
 	apis.sessions.AllowCreate(config.DevMode)
-	apis.auth = NewAuthApi(config, config.NewLogger("auth"))
+	apis.auth = NewAuthApi(config, makeOnFairdataLogin(metax, config.db, config.NewLogger("sync")), config.NewLogger("auth"))
 	apis.proxy = NewApiProxy(
 		"https://"+config.MetaxApiHost+"/rest/",
 		config.metaxApiUser,

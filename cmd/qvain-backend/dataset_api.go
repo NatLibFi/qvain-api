@@ -116,7 +116,7 @@ func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
 			//time.Sleep(3*time.Second)
-			api.ListDatasets(w, r, user.Uid)
+			api.ListDatasets(w, r, user)
 		case http.MethodPost:
 			api.createDataset(w, r, user)
 		case http.MethodOptions:
@@ -139,12 +139,12 @@ func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.Dataset(w, r, user, id)
 }
 
-func (api *DatasetApi) ListDatasets(w http.ResponseWriter, r *http.Request, uid uuid.UUID) {
+func (api *DatasetApi) ListDatasets(w http.ResponseWriter, r *http.Request, user *models.User) {
 	switch r.URL.RawQuery {
 	case "":
 	case "fetch":
 		api.logger.Debug().Str("op", "fetch").Msg("datasets")
-		err := shared.Fetch(api.metax, api.db, uid)
+		err := shared.Fetch(api.metax, api.db, api.logger, user.Uid, user.Identity)
 		if err != nil {
 			// TODO: handle mixed error
 			jsonError(w, err.Error(), http.StatusBadRequest)
@@ -153,15 +153,15 @@ func (api *DatasetApi) ListDatasets(w http.ResponseWriter, r *http.Request, uid 
 		}
 	case "fetchall":
 		api.logger.Debug().Str("op", "fetchall").Msg("datasets")
-		shared.FetchAll(api.metax, api.db, uid)
+		shared.FetchAll(api.metax, api.db, api.logger, user.Uid, user.Identity)
 	default:
 		jsonError(w, "invalid parameter", http.StatusBadRequest)
 		return
 	}
 
-	jsondata, err := api.db.ViewDatasetsByOwner(uid)
+	jsondata, err := api.db.ViewDatasetsByOwner(user.Uid)
 	if err != nil {
-		api.logger.Error().Err(err).Str("uid", uid.String()).Msg("error listing datasets")
+		api.logger.Error().Err(err).Str("uid", user.Uid.String()).Msg("error listing datasets")
 		dbError(w, err)
 		return
 	}
