@@ -6,12 +6,15 @@
 
 GO := go
 CMDS := $(notdir $(wildcard cmd/*))
-BINDIR := $(CURDIR)/bin
-DATADIRS := $(addprefix $(PWD)/,doc bench bin)
+ROOTDIR := $(CURDIR)
+PARENTDIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST)))../)
+BINDIR := $(ROOTDIR)/bin
+DATADIRS := $(addprefix $(ROOTDIR)/,doc bench bin)
+RELEASEDIR=$(ROOTDIR)/release
 SOURCELINK := ${GOBIN}/sourcelink
 MINIFY := $(shell command -v minify 2>/dev/null)
 
-# VCS
+### VCS
 TAG := $(shell git describe --tags --always --dirty="-dev" 2>/dev/null)
 HASH := $(shell git rev-parse --short HEAD 2>/dev/null)
 BRANCH := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
@@ -19,10 +22,14 @@ REPO := $(shell git ls-remote --get-url 2>/dev/null)
 REPOLINK := $(shell test -x $(SOURCELINK) && ${GOBIN}/sourcelink $(REPO) $(HASH) $(BRANCH) 2>/dev/null || echo)
 VERSION_PACKAGE := $(shell $(GO) list -f '{{.ImportPath}}' ./internal/version)
 
-# collect VCS info for linker
+### collect VCS info for linker
 LDFLAGS := "-s -w -X $(VERSION_PACKAGE).CommitHash=$(HASH) -X $(VERSION_PACKAGE).CommitTag=$(TAG) -X $(VERSION_PACKAGE).CommitBranch=$(BRANCH) -X $(VERSION_PACKAGE).CommitRepo=$(REPOLINK)"
 
-RELEASEDIR=$(PWD)/release
+### trim paths from binaries
+# ... for go < 1.10
+#TRIMFLAGS := -gcflags=-trimpath=$(PARENTDIR) -asmflags=-trimpath=$(PARENTDIR)
+# ... for go >= 1.10
+TRIMFLAGS := -gcflags=all=-trimpath=$(PARENTDIR) -asmflags=all=-trimpath=$(PARENTDIR)
 
 #IMPORT_PATH := $(shell go list -f '{{.ImportPath}}' .)
 #BINARY := $(notdir $(IMPORT_PATH))
@@ -37,18 +44,23 @@ endif
 
 .PHONY: all install run runall release clean cloc doc prebuild listall
 
-all: listall minify $(CMDS)
-	@echo built all: $(CMDS)
+all: listall minify $(CMDS) badger
+	@#@echo built all: $(CMDS)
+	@echo build successful!
 
 $(CMDS): prebuild $(wildcard cmd/$@/*.go)
 	@echo building: $@
 	@cd cmd/$@; \
 	$(GO) build -o $(BINDIR)/$@ -ldflags $(LDFLAGS)
 
+badger:
+	@echo building: $@
+	@env GOBIN=$(BINDIR) $(GO) install -v github.com/dgraph-io/badger/...
+
 # this doesn't actually use make but relies on the build cache in Go 1.10 to build only those files that have changed
 # TODO: what about data directories?
 install: listall
-	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) ./cmd/...
+	@env GOBIN=$(BINDIR) $(GO) install -v -ldflags $(LDFLAGS) $(TRIMFLAGS) ./cmd/...
 	@if test -n "$(INSTALL)"; then \
 		echo "installing to $(INSTALL):"; \
 		cp -auvf $(BINDIR)/* $(INSTALL)/; \
@@ -105,6 +117,7 @@ release: listall minify doc
 	cp -auvf schema/* $(BUILDDIR)/schema
 	ln -sfn $(BUILDDIR) $(RELEASEDIR)/stable
 	ln -sfn $(BUILDDIR) $(RELEASEDIR)/testing
+	ln -sfn $(BUILDDIR) $(RELEASEDIR)/test
 
 cloc:
 	cloc --exclude-dir=vendor .
