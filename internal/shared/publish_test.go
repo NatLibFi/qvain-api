@@ -43,14 +43,18 @@ func modifyTitleFromDataset(db *psql.DB, id uuid.UUID, title string) error {
 	return tx.Commit()
 }
 
-func deleteFilesFromDataset(db *psql.DB, id uuid.UUID) error {
+func deleteFilesFromFairdataDataset(db *psql.DB, id uuid.UUID) error {
+	return deletePathFromDataset(db, id, "{research_dataset,files}")
+}
+
+func deletePathFromDataset(db *psql.DB, id uuid.UUID, path string) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	ct, err := tx.Exec("UPDATE datasets SET blob = blob #- '{research_dataset,files}', modified = now() WHERE id = $1", id.Array())
+	ct, err := tx.Exec("UPDATE datasets SET blob = blob #- $2, modified = now() WHERE id = $1", id.Array(), path)
 	if err != nil {
 		return err
 	}
@@ -144,9 +148,9 @@ func TestPublish(t *testing.T) {
 			t.Logf("(re)published with version id %q", vId)
 		})
 
-		err = deleteFilesFromDataset(db, id)
+		err = deleteFilesFromFairdataDataset(db, id)
 		if err != nil {
-			t.Fatal("deleteFilesFromDataset():", err)
+			t.Fatal("deleteFilesFromFairdataDataset():", err)
 		}
 
 		t.Run(test.fn+"(files)", func(t *testing.T) {
@@ -170,6 +174,14 @@ func TestPublish(t *testing.T) {
 
 			t.Logf("(re)published with version id %q", vId)
 		})
+
+		// if we want to make it invalid again...
+		/*
+			err = deletePathFromDataset(db, id, "{research_dataset,title,en}")
+			if err != nil {
+				t.Fatal("deletePathFromDataset():", err)
+			}
+		*/
 
 	}
 }

@@ -7,14 +7,16 @@ import (
 
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/metax"
+
+	"github.com/rs/zerolog"
 	"github.com/wvh/uuid"
 )
 
 const DefaultRequestTimeout = 10 * time.Second
 const RetryInterval = 10 * time.Second
 
-func Fetch(api *metax.MetaxService, db *psql.DB, owner uuid.UUID) error {
-	last, err := db.GetLastSync(owner)
+func Fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string) error {
+	last, err := db.GetLastSync(uid)
 	if err != nil && err != psql.ErrNotFound {
 		fmt.Printf("%T %+v\n", err, err)
 		return err
@@ -22,37 +24,36 @@ func Fetch(api *metax.MetaxService, db *psql.DB, owner uuid.UUID) error {
 		return fmt.Errorf("too soon")
 	}
 
-	return fetch(api, db, owner, last)
+	return fetch(api, db, logger, uid, extid, last)
 }
 
-func FetchSince(api *metax.MetaxService, db *psql.DB, owner uuid.UUID, since time.Time) error {
-	return fetch(api, db, owner, since)
+func FetchSince(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string, since time.Time) error {
+	return fetch(api, db, logger, uid, extid, since)
 }
 
-func FetchAll(api *metax.MetaxService, db *psql.DB, owner uuid.UUID) error {
-	return fetch(api, db, owner, time.Time{})
+func FetchAll(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string) error {
+	return fetch(api, db, logger, uid, extid, time.Time{})
 }
 
-func fetch(api *metax.MetaxService, db *psql.DB, owner uuid.UUID, since time.Time) error {
-	var params = []metax.DatasetOption{metax.WithOwner(owner.String())}
+func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string, since time.Time) error {
+	var params []metax.DatasetOption
+
+	// build query options
+	if extid == "" {
+		// search by Qvain owner
+		params = append(params, metax.WithOwner(uid.String()))
+	} else {
+		// search by external user identity
+		params = append(params, metax.WithUser(extid))
+	}
 
 	if !since.IsZero() {
-		fmt.Println("Last-Modified-Since:", since)
 		params = append(params, metax.Since(since))
 	}
 
-	/*
-		last, err := db.GetLastSync(owner)
-		if err != nil {
-			return err
-		}
-		if time.Now().Sub(last) < RetryInterval {
-			return fmt.Errorf("too soon")
-		}
-	*/
-
 	fmt.Println("syncing with metax datasets endpoint")
-	batch, err := db.NewBatchForUser(owner)
+	// setup DB batch transaction
+	batch, err := db.NewBatchForUser(uid)
 	if err != nil {
 		return err
 	}
@@ -61,18 +62,19 @@ func fetch(api *metax.MetaxService, db *psql.DB, owner uuid.UUID, since time.Tim
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultRequestTimeout)
 	defer cancel()
 
-	// ReadStreamChannel(ctx, params) (chan *MetaxRawRecord, chan error, error)
-	//c, errc, err := api.ReadStreamChannel(ctx, metax.WithOwner(owner.String()), extraOpts...)
-	c, errc, err := api.ReadStreamChannel(ctx, params...)
+	// make API request
+	total, c, errc, err := api.ReadStreamChannel(ctx, params...)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("channel response:")
-	i := 0
-	count := 0
+	fmt.Printf("channel response will contain %d datasets\n", total)
+	logger.Debug().Str("user", uid.String()).Str("identity", extid).Int("count", total).Msg("starting sync with metax")
+	read := 0
+	written := 0
 	success := false
 
+	// loop until all read, error or timeout
 Done:
 	for {
 		select {
@@ -81,8 +83,8 @@ Done:
 				success = true
 				break Done
 			}
-			fmt.Printf("%05d:\n", i+1)
-			i++
+			read++
+			fmt.Printf("%05d:\n", read)
 			dataset, err := fdDataset.ToQvain()
 			if err != nil {
 				//return err
@@ -94,11 +96,13 @@ Done:
 				fmt.Println("  Store error:", err)
 				continue
 			}
-			count++
+			written++
 		case err := <-errc:
+			// error while streaming
 			fmt.Println("api error:", ctx.Err())
 			return err
 		case <-ctx.Done():
+			// timeout
 			fmt.Println("api timeout:", ctx.Err())
 			return err
 		}
@@ -109,6 +113,6 @@ Done:
 	if err != nil {
 		return err
 	}
-	fmt.Println("success:", success, i, count)
+	fmt.Println("success:", success, read, written)
 	return nil
 }
