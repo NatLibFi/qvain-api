@@ -45,57 +45,7 @@ func (api *DatasetApi) SetIdentity(identity string) {
 }
 
 func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	/*
-		var (
-			user uuid.UUID
-			err error
-		)
-	*/
-
-	/*
-			jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			return
-		}
-	*/
-
-	// require authentication from here on
-	/*
-		token, ok := jwt.FromContext(r.Context())
-		if ok {
-			user, err = uuid.FromString(token.Subject())
-			if err != nil {
-				ok = false
-			}
-		}
-		if !ok {
-			jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-	*/
-	//api.logger.Debug().Str("head", "").Str("path", r.URL.Path).Msg("datasets")
-
-	//user = uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18")
-	/*
-		user := &models.User{
-			Uid: uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18"),
-			Identity: "2c3683230a580e286c5f5c4b4263f3b80e35f6d1@fairdataid",
-			Name: "wvh",
-			Email: "wvh@example.com",
-			Organisation: "Test Organisation",
-			Projects: []string{"2001036"},
-		}
-		sid, err := api.sessions.NewLoginWithCookie(
-			w,
-			&user.Uid,
-			user,
-		)
-		if err != nil {
-			api.logger.Error().Err(err).Msg("no session")
-			jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-	*/
-
+	// authenticated api
 	session, err := api.sessions.SessionFromRequest(r)
 	//session, err := api.sessions.Get(sid)
 	if err != nil {
@@ -103,10 +53,9 @@ func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
-	//_ = session
+
 	user := session.User
 
-	//api.logger.Debug().Str("head", "-").Str("path", r.URL.Path).Str("sid", sid).Msg("datasets")
 	head := ShiftUrlWithTrailing(r)
 	api.logger.Debug().Str("head", head).Str("path", r.URL.Path).Str("method", r.Method).Msg("datasets")
 
@@ -312,13 +261,12 @@ func (api *DatasetApi) updateDataset(w http.ResponseWriter, r *http.Request, own
 }
 
 func (api *DatasetApi) publishDataset(w http.ResponseWriter, r *http.Request, owner uuid.UUID, id uuid.UUID) {
-	//owner = uuid.MustFromString("12345678-9012-3456-7890-123456789012")
 	vId, nId, qId, err := shared.Publish(api.metax, api.db, id, owner)
 	if err != nil {
 		switch t := err.(type) {
 		case *metax.ApiError:
 			api.logger.Warn().Err(err).Str("dataset", id.String()).Str("owner", owner.String()).Str("origin", "api").Msg("publish failed")
-			jsonError(w, t.Error(), convertExternalStatusCode(t.StatusCode()))
+			jsonErrorWithPayload(w, t.Error(), "metax", t.OriginalError(), convertExternalStatusCode(t.StatusCode()))
 		case *psql.DatabaseError:
 			api.logger.Error().Err(err).Str("dataset", id.String()).Str("owner", owner.String()).Str("origin", "database").Msg("publish failed")
 			dbError(w, err)

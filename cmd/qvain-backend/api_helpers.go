@@ -105,6 +105,23 @@ func jsonErrorWithDescription(w http.ResponseWriter, msg string, help string, ur
 	enc.Write()
 }
 
+// jsonErrorWithPayload writes an error API response like jsonError, but allows adding a source and extra (pre-serialised) json value.
+func jsonErrorWithPayload(w http.ResponseWriter, msg string, origin string, payload []byte, status int) {
+	apiWriteHeaders(w)
+	w.WriteHeader(status)
+
+	enc := gojay.BorrowEncoder(w)
+	defer enc.Release()
+
+	enc.AppendByte('{')
+	enc.AddIntKey("status", status)
+	enc.AddStringKey("msg", msg)
+	enc.AddStringKey("origin", origin)
+	enc.AddEmbeddedJSONKeyOmitEmpty("more", (*gojay.EmbeddedJSON)(&payload))
+	enc.AppendByte('}')
+	enc.Write()
+}
+
 // smartError checks if the request needs a JSON or HTML response and calls the right error function.
 func smartError(w http.ResponseWriter, r *http.Request, msg string, status int) {
 	if strings.HasPrefix(r.Header.Get("Accept"), "application/json") {
