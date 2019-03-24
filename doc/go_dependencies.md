@@ -52,6 +52,7 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/wvh/uuid/flag
 	golang.org/x/crypto/ed25519
 	golang.org/x/crypto/ed25519/internal/edwards25519
+	golang.org/x/crypto/pbkdf2
 	golang.org/x/net/context
 	golang.org/x/net/context/ctxhttp
 	golang.org/x/oauth2
@@ -60,4 +61,4 @@ This auto-generated document lists all imports and indirect package dependencies
 	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2018-10-30 at commit 4ed7f08 by make_go_dependencies_list.sh
+generated on 2019-03-19 at commit 178e2ee by make_go_dependencies_list.sh
