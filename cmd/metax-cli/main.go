@@ -18,6 +18,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/NatLibFi/qvain-api/internal/version"
+
+	"github.com/rs/zerolog"
 )
 
 const ProgramName = "metax-query"
@@ -29,7 +31,17 @@ const (
 	VERSION_URL  = "/rest/version"
 )
 
-var Verbose bool
+var (
+	Verbose bool
+	Logger  zerolog.Logger
+)
+
+func init() {
+	zerolog.TimeFieldFormat = "15:04:05.000000"
+	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+
+	Logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: "15:04:05.000000"}).With().Caller().Timestamp().Logger()
+}
 
 func usage() {
 	fmt.Fprintln(os.Stderr, "")

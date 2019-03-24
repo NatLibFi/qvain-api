@@ -72,12 +72,12 @@ func runFetchOld(url string, args []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	c, errc, err := svc.ReadStreamChannel(ctx, metax.WithOwner(owner.String()))
+	total, c, errc, err := svc.ReadStreamChannel(ctx, metax.WithOwner(owner.String()))
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("channel response:")
+	fmt.Printf("channel response (%d datasets):", total)
 	i := 0
 	success := false
 
