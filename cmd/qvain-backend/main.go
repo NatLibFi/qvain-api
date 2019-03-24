@@ -21,8 +21,8 @@ const (
 	HttpProxyPort = "8080"
 
 	// timeouts
-	HttpReadTimeout  = 5 * time.Second
-	HttpWriteTimeout = 5 * time.Second
+	HttpReadTimeout  = 10 * time.Second
+	HttpWriteTimeout = 25 * time.Second
 	HttpIdleTimeout  = 120 * time.Second
 
 	// additional info message when Go web server returns

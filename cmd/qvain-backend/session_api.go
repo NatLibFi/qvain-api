@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/internal/secmsg"
@@ -182,6 +184,10 @@ func (api *SessionApi) Current(w http.ResponseWriter, r *http.Request) {
 func (api *SessionApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.logger.Debug().Str("path", r.URL.Path).Msg("request path")
 
+	if r.URL.Path == "/sse" {
+		api.SSE(w, r)
+		return
+	}
 	if r.URL.Path != "/" {
 		jsonError(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -201,4 +207,58 @@ func (api *SessionApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		jsonError(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
+}
+
+func (api *SessionApi) SSE(w http.ResponseWriter, r *http.Request) {
+	session, err := api.sessions.SessionFromRequest(r)
+	if err == nil {
+		api.logger.Debug().Err(err).Msg("no current session")
+		jsonError(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return
+	}
+	_ = session
+
+	datac := make(chan []byte)
+	go func() {
+		for {
+			select {
+			case <-datac:
+				api.logger.Debug().Msg("closing data channel")
+				return
+
+			default:
+				b := []byte(time.Now().Format(time.RFC3339))
+				datac <- b
+				time.Sleep(2 * time.Second)
+			}
+		}
+	}()
+
+	// set SSE headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Cache-Control", "no-cache")
+
+Looping:
+	for {
+		select {
+		case <-r.Context().Done():
+			/*
+				if err := unsubscribeFn(); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+			*/
+			break Looping
+
+		default:
+			b := <-datac
+			fmt.Fprintf(w, "data: %s\n", b)
+
+			w.(http.Flusher).Flush()
+		}
+	}
+	close(datac)
+
 }
