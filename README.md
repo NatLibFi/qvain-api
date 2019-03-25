@@ -1,5 +1,8 @@
-Qvain API
----------
+[![GoDoc](https://godoc.org/github.com/NatLibFi/qvain-api?status.svg)](https://godoc.org/github.com/NatLibFi/qvain-api)
+[![Build Status](https://travis-ci.org/NatLibFi/qvain-api.svg?branch=next)](https://travis-ci.org/NatLibFi/qvain-api)
+[![Go Report Card](https://goreportcard.com/badge/github.com/NatLibFi/qvain-api)](https://goreportcard.com/report/github.com/NatLibFi/qvain-api)
+
+# Qvain API
 
 ## Introduction
 
