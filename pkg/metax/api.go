@@ -569,15 +569,16 @@ func (api *MetaxService) Store(ctx context.Context, blob json.RawMessage) (json.
 	}
 	defer res.Body.Close()
 
-	// only read JSON responses; 204 is the only valid status code that might not return JSON
+	// only read JSON responses; as exceptions, 204, 403 and 404 might not return JSON
+	expectJson := res.StatusCode != http.StatusNoContent && res.StatusCode != http.StatusForbidden && res.StatusCode != http.StatusNotFound
 	hasJson := strings.HasPrefix(res.Header.Get("Content-Type"), "application/json")
-	if !hasJson && res.StatusCode != http.StatusNoContent {
+	if !hasJson && expectJson {
 		return nil, &ApiError{"invalid content-type: expected JSON", nil, res.StatusCode}
 	}
 
 	var body []byte
 	body, _ = ioutil.ReadAll(res.Body)
-	if len(body) < 1 && res.StatusCode != http.StatusNoContent {
+	if len(body) < 1 && expectJson {
 		return nil, &ApiError{"invalid content-length: zero body", nil, res.StatusCode}
 	}
 
@@ -612,6 +613,8 @@ func (api *MetaxService) Store(ctx context.Context, blob json.RawMessage) (json.
 		return nil, &ApiError{"invalid dataset", body, res.StatusCode}
 	case 401:
 		return nil, &ApiError{"authorisation required", body, res.StatusCode}
+	case 403:
+		return nil, &ApiError{"forbidden", body, res.StatusCode}
 	case 404:
 		return nil, &ApiError{"not found", body, res.StatusCode}
 	default:
