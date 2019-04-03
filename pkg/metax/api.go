@@ -9,7 +9,9 @@ package metax
  */
 
 import (
+	"crypto/tls"
 	"fmt"
+
 	//"log"
 	"time"
 	//"runtime"
@@ -18,6 +20,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+
 	//"net/url"
 	"bytes"
 	"context"
@@ -75,6 +78,12 @@ func WithUserAgent(ua string) MetaxOption {
 	}
 }
 
+func WithInsecureCertificates(enable bool) MetaxOption {
+	return func(svc *MetaxService) {
+		svc.client.Transport.(*http.Transport).TLSClientConfig.InsecureSkipVerify = enable
+	}
+}
+
 func WithCredentials(user, pass string) MetaxOption {
 	return func(svc *MetaxService) {
 		svc.user = user
@@ -105,6 +114,7 @@ func NewMetaxService(host string, params ...MetaxOption) *MetaxService {
 				MaxIdleConnsPerHost: 4,
 				IdleConnTimeout:     90 * time.Second,
 				TLSHandshakeTimeout: 10 * time.Second,
+				TLSClientConfig:     &tls.Config{InsecureSkipVerify: false},
 			},
 		},
 	}

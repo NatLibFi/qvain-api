@@ -51,7 +51,9 @@ func NewApis(config *Config) *Apis {
 		logger: config.NewLogger("apis"),
 	}
 
-	metax := metax.NewMetaxService(config.MetaxApiHost, metax.WithCredentials(config.metaxApiUser, config.metaxApiPass))
+	metax := metax.NewMetaxService(config.MetaxApiHost,
+		metax.WithCredentials(config.metaxApiUser, config.metaxApiPass),
+		metax.WithInsecureCertificates(config.DevMode))
 
 	apis.datasets = NewDatasetApi(config.db, config.sessions, metax, config.NewLogger("datasets"))
 	apis.objects = NewObjectApi(config.db, config.NewLogger("objects"))
