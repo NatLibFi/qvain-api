@@ -43,11 +43,13 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/pkg/errors
 	github.com/pquerna/cachecontrol
 	github.com/pquerna/cachecontrol/cacheobject
+	github.com/rs/xid
 	github.com/rs/zerolog
 	github.com/rs/zerolog/internal/json
 	github.com/rs/zerolog/log
 	github.com/tidwall/gjson
 	github.com/tidwall/match
+	github.com/tidwall/pretty
 	github.com/wvh/uuid
 	github.com/wvh/uuid/flag
 	golang.org/x/crypto/ed25519
@@ -56,9 +58,10 @@ This auto-generated document lists all imports and indirect package dependencies
 	golang.org/x/net/context
 	golang.org/x/net/context/ctxhttp
 	golang.org/x/oauth2
+	golang.org/x/sys/unix
 	gopkg.in/square/go-jose.v2
 	gopkg.in/square/go-jose.v2/cipher
 	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2019-03-19 at commit 178e2ee by make_go_dependencies_list.sh
+generated on 2019-04-03 at commit v0.9.0-1-g2c6f4bc by make_go_dependencies_list.sh

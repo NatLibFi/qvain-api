@@ -28,6 +28,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/pquerna/ffjson v0.0.0-20181028064349-e517b90714f7
+	github.com/rs/xid v1.2.1
 	github.com/rs/zerolog v1.13.0
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/shopspring/decimal v0.0.0-20180709203117-cd690d0c9e24 // indirect
@@ -37,6 +38,7 @@ require (
 	github.com/tidwall/gjson v1.2.1
 	github.com/tidwall/match v0.0.0-20171002075945-1731857f09b1 // indirect
 	github.com/tidwall/pretty v0.0.0-20190325153808-1166b9ac2b65 // indirect
+	github.com/tidwall/sjson v1.0.4
 	github.com/valyala/fastjson v1.4.1
 	github.com/wvh/uuid v0.0.0-20180305145759-746bc10d0c6f
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c // indirect

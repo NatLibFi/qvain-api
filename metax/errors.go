@@ -8,6 +8,8 @@ import (
 var (
 	ErrInvalidContentType = errors.New("invalid content-type: expected json")
 	ErrNotFound           = errors.New("not found")
+	ErrIdRequired         = errors.New("dataset without id and not allowed to create")
+	ErrInvalidId          = errors.New("invalid dataset id")
 )
 
 // LinkingError is a custom error type that adds the missing field name.

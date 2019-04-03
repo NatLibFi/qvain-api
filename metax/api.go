@@ -23,6 +23,7 @@ import (
 	"context"
 	"errors"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -380,6 +381,7 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	WithStreaming(req)
 
 	api.logger.Printf("request headers: %+v\n", req)
+	fmt.Printf("[sync] request: %+v\n", req)
 
 	start := time.Now()
 	defer func() {
@@ -388,9 +390,11 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 
 	res, err := api.client.Do(req)
 	if err != nil {
-		return count, nil, nil, err
+		return 0, nil, nil, err
 	}
 	// WARNING: go routine below is responsible for closing the response body
+
+	fmt.Printf("[sync] response: %+v\n", res)
 
 	switch res.StatusCode {
 	case 200:
@@ -399,17 +403,21 @@ func (api *MetaxService) ReadStreamChannel(ctx context.Context, params ...Datase
 	case 403:
 		return 0, nil, nil, fmt.Errorf("error: forbidden (status: %d)", res.StatusCode)
 	default:
-		return 0, nil, nil, fmt.Errorf("error: can't retrieve record (status: %d)", res.StatusCode)
+		return 0, nil, nil, fmt.Errorf("error: can't retrieve dataset (status: %d)", res.StatusCode)
 	}
 
 	if !strings.HasPrefix(res.Header.Get("Content-Type"), "application/json") {
 		return 0, nil, nil, fmt.Errorf("unknown content-type, expected json")
 	}
 
-	if res.Header.Get("X-Count") == "" {
+	strCount := res.Header.Get("X-Count")
+	if strCount == "" {
 		api.logger.Print("metax: missing X-Count header in streaming response")
+		fmt.Println("metax: missing X-Count header in streaming response")
 	} else {
-		api.logger.Print("metax: x-count:", res.Header.Get("X-Count"))
+		count, err = strconv.Atoi(strCount)
+		api.logger.Print("metax: x-count:", count)
+		fmt.Println("metax: x-count:", count)
 	}
 
 	outc := make(chan *MetaxRawRecord)

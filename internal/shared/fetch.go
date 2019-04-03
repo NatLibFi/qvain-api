@@ -8,17 +8,18 @@ import (
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/metax"
 
+	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 	"github.com/wvh/uuid"
 )
 
-const DefaultRequestTimeout = 10 * time.Second
+const DefaultRequestTimeout = 15 * time.Second
 const RetryInterval = 10 * time.Second
 
 func Fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string) error {
 	last, err := db.GetLastSync(uid)
 	if err != nil && err != psql.ErrNotFound {
-		fmt.Printf("%T %+v\n", err, err)
+		//fmt.Printf("%T %+v\n", err, err)
 		return err
 	} else if time.Now().Sub(last) < RetryInterval {
 		return fmt.Errorf("too soon")
@@ -51,7 +52,6 @@ func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid
 		params = append(params, metax.Since(since))
 	}
 
-	fmt.Println("syncing with metax datasets endpoint")
 	// setup DB batch transaction
 	batch, err := db.NewBatchForUser(uid)
 	if err != nil {
@@ -68,8 +68,12 @@ func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid
 		return err
 	}
 
-	fmt.Printf("channel response will contain %d datasets\n", total)
-	logger.Debug().Str("user", uid.String()).Str("identity", extid).Int("count", total).Msg("starting sync with metax")
+	//logger.Info().Str("user", uid.String()).Str("identity", extid).Int("count", total).Msg("starting sync with metax")
+
+	// create sub-logger to correlate possibly multiple log entries
+	syncLogger := logger.With().Str("sync-id", xid.New().String()).Logger()
+	syncLogger.Info().Str("user", uid.String()).Str("identity", extid).Int("total", total).Msg("starting sync")
+
 	read := 0
 	written := 0
 	success := false
@@ -83,27 +87,48 @@ Done:
 				success = true
 				break Done
 			}
+
 			read++
-			fmt.Printf("%05d:\n", read)
-			dataset, err := fdDataset.ToQvain()
+
+			dataset, isNew, err := fdDataset.ToQvain()
 			if err != nil {
-				//return err
-				fmt.Println("  skipping:", err)
+				syncLogger.Debug().Err(err).Int("read", read).Msg("error parsing dataset, skipping")
 				continue
 			}
-			fmt.Println("  id:", dataset.Id)
-			if err = batch.Update(dataset.Id, dataset.Blob()); err != nil {
-				fmt.Println("  Store error:", err)
-				continue
+
+			if isNew {
+				// create new id
+				dataset.Id, err = uuid.NewUUID()
+				if err != nil {
+					return err
+				}
+
+				// inject current user for datasets created externally
+				dataset.Creator = uid
+				dataset.Owner = uid
+
+				// it comes from upstream, so I guess it's "published"
+				dataset.Published = true
+
+				if err = batch.Store(dataset); err != nil {
+					syncLogger.Debug().Err(err).Int("read", read).Str("id", dataset.Id.String()).Msg("can't store dataset")
+					continue
+				}
+			} else {
+				if err = batch.Update(dataset.Id, dataset.Blob()); err != nil {
+					syncLogger.Debug().Err(err).Int("read", read).Str("id", dataset.Id.String()).Msg("can't update dataset")
+					continue
+				}
 			}
+			syncLogger.Debug().Bool("new", isNew).Str("id", dataset.Id.String()).Msg("batched dataset")
 			written++
 		case err := <-errc:
 			// error while streaming
-			fmt.Println("api error:", ctx.Err())
+			syncLogger.Info().Err(err).Msg("api error")
 			return err
 		case <-ctx.Done():
 			// timeout
-			fmt.Println("api timeout:", ctx.Err())
+			syncLogger.Info().Err(ctx.Err()).Msg("api timeout")
 			return err
 		}
 	}
@@ -113,6 +138,7 @@ Done:
 	if err != nil {
 		return err
 	}
-	fmt.Println("success:", success, read, written)
+
+	syncLogger.Info().Int("total", total).Int("written", written).Msg("successful sync")
 	return nil
 }

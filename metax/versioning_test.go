@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func readFile(t *testing.T, fn string) []byte {
+func readTestFile(t *testing.T, fn string) []byte {
 	path := filepath.Join("testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -49,7 +49,7 @@ func TestCreatedNew(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dataset := readFile(t, test.fn)
+		dataset := readTestFile(t, test.fn)
 
 		t.Run(test.fn+"(bool)", func(t *testing.T) {
 			result := CreatedNewVersion(dataset)
@@ -88,7 +88,7 @@ func TestGetIdentifier(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dataset := readFile(t, test.fn)
+		dataset := readTestFile(t, test.fn)
 
 		t.Run(test.fn+"(bool)", func(t *testing.T) {
 			result := IsPublished(dataset)
@@ -139,7 +139,7 @@ func TestEditor(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dataset := readFile(t, test.fn)
+		dataset := readTestFile(t, test.fn)
 
 		t.Run(test.fn, func(t *testing.T) {
 			result := GetQvainId(dataset)
@@ -218,7 +218,7 @@ func TestGetIdentifiers(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		dataset := readFile(t, test.fn)
+		dataset := readTestFile(t, test.fn)
 
 		t.Run(test.fn, func(t *testing.T) {
 			vId, nId, qId := GetIdentifiers(dataset)
