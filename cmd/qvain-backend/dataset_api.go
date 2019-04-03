@@ -215,7 +215,7 @@ func (api *DatasetApi) createDataset(w http.ResponseWriter, r *http.Request, cre
 		return
 	}
 
-	err = api.db.Store(typed.Unwrap())
+	err = api.db.Create(typed.Unwrap())
 	if err != nil {
 		//jsonError(w, "store failed", http.StatusBadRequest)
 		dbError(w, err)

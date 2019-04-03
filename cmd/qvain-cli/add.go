@@ -51,7 +51,7 @@ func runAddRecord(psql *psql.DB, args []string) error {
 	record.SetData(0, schema, blob)
 	fmt.Printf("%+v\n", record)
 
-	err = psql.Store(record)
+	err = psql.Create(record)
 	if err != nil {
 		return err
 	}

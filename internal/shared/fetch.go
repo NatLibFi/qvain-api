@@ -107,10 +107,11 @@ Done:
 				dataset.Creator = uid
 				dataset.Owner = uid
 
-				// it comes from upstream, so I guess it's "published"
+				// it comes from upstream, so I guess it's "published" and "valid"
 				dataset.Published = true
+				dataset.SetValid(true)
 
-				if err = batch.Store(dataset); err != nil {
+				if err = batch.CreateWithMetadata(dataset); err != nil {
 					syncLogger.Debug().Err(err).Int("read", read).Str("id", dataset.Id.String()).Msg("can't store dataset")
 					continue
 				}

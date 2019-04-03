@@ -64,4 +64,4 @@ This auto-generated document lists all imports and indirect package dependencies
 	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2019-04-03 at commit v0.9.0-1-g2c6f4bc by make_go_dependencies_list.sh
+generated on 2019-04-03 at commit v0.9.0-2-g20f3fd4 by make_go_dependencies_list.sh

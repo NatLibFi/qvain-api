@@ -19,16 +19,14 @@ type Dataset struct {
 
 	Created  time.Time
 	Modified time.Time
+	Synced   time.Time
 
-	Pushed    time.Time
-	Pulled    time.Time
 	Published bool
+	valid     bool
 
 	family int
 	schema string
 	blob   []byte
-
-	valid bool
 }
 
 // NewDataset creates a new dataset record with given Creator (which is also set into the Owner field).

@@ -10,6 +10,7 @@ import (
 type BatchManager struct {
 	tx         *Tx
 	triggerUid *uuid.UUID
+	at         time.Time
 }
 
 func (db *DB) NewBatch() (*BatchManager, error) {
@@ -17,8 +18,7 @@ func (db *DB) NewBatch() (*BatchManager, error) {
 	if err != nil {
 		return nil, err
 	}
-	//defer tx.Rollback()
-	return &BatchManager{tx: tx}, nil
+	return &BatchManager{tx: tx, at: time.Now()}, nil
 }
 
 func (db *DB) NewBatchForUser(uid uuid.UUID) (*BatchManager, error) {
@@ -31,8 +31,13 @@ func (db *DB) NewBatchForUser(uid uuid.UUID) (*BatchManager, error) {
 	return b, nil
 }
 
-func (b *BatchManager) Store(dataset *models.Dataset) error {
-	return b.tx.Store(dataset)
+func (b *BatchManager) Create(dataset *models.Dataset) error {
+	return b.tx.Create(dataset)
+}
+
+func (b *BatchManager) CreateWithMetadata(dataset *models.Dataset) error {
+	dataset.Synced = b.at
+	return b.tx.createWithMetadata(dataset)
 }
 
 func (b *BatchManager) Update(id uuid.UUID, blob []byte) error {

@@ -9,30 +9,15 @@ import (
 	"time"
 )
 
-func (db *DB) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
-	tx, err := db.pool.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	tag, err := tx.Exec("UPDATE datasets SET owner = $1 WHERE id = $2", uid.Array(), id.Array())
-	if err != nil {
-		return handleError(err)
-	}
-	log.Println("tag:", tag)
-
-	return tx.Commit()
-}
-
-func (db *DB) Store(dataset *models.Dataset) error {
+// Create creates a new dataset. It is a convenience wrapper for the Create method on transactions.
+func (db *DB) Create(dataset *models.Dataset) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	err = tx.Store(dataset)
+	err = tx.Create(dataset)
 	if err != nil {
 		return handleError(err)
 	}
@@ -40,6 +25,7 @@ func (db *DB) Store(dataset *models.Dataset) error {
 	return tx.Commit()
 }
 
+// BatchStore takes a list of datasets and stores them as new datasets.
 func (db *DB) BatchStore(datasets []*models.Dataset) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -49,7 +35,7 @@ func (db *DB) BatchStore(datasets []*models.Dataset) error {
 
 	// do something batch-like
 	for _, dataset := range datasets {
-		err = tx.Store(dataset)
+		err = tx.Create(dataset)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -64,11 +50,37 @@ func (db *DB) BatchStore(datasets []*models.Dataset) error {
 	return nil
 }
 
-func (tx *Tx) Store(dataset *models.Dataset) error {
+// Create inserts a new dataset into the database using default values for date and boolean fields.
+// Use this for new datasets created in this application.
+func (tx *Tx) Create(dataset *models.Dataset) error {
 	_, err := tx.Exec("INSERT INTO datasets(id, creator, owner, family, schema, blob) VALUES($1, $2, $3, $4, $5, $6)",
 		dataset.Id.Array(),
 		dataset.Creator.Array(),
 		dataset.Owner.Array(),
+		dataset.Family(),
+		dataset.Schema(),
+		dataset.Blob(),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// createWithMetadata inserts a new dataset into the database, but also populates other fields.
+// Use this when the new dataset already has some metadata fields set, such as when it origates from other services.
+//
+// This method does not set Modified, as that field is reserved for user edits.
+func (tx *Tx) createWithMetadata(dataset *models.Dataset) error {
+	_, err := tx.Exec("INSERT INTO datasets(id, creator, owner, created, synced, published, valid, family, schema, blob) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		dataset.Id.Array(),
+		dataset.Creator.Array(),
+		dataset.Owner.Array(),
+		dataset.Created,
+		dataset.Synced,
+		dataset.Published,
+		dataset.IsValid(),
 		dataset.Family(),
 		dataset.Schema(),
 		dataset.Blob(),
@@ -391,9 +403,6 @@ func (db *DB) CheckOwner(id uuid.UUID, owner uuid.UUID) (err error) {
 	return tx.CheckOwner(id, owner)
 }
 
-// publish
-//func (db *DB) Publish(id uuid.UUID, )
-
 // MarkPublished marks a dataset as published and updates its sync time. It does not do owner checks.
 func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
 	tx, err := db.Begin()
@@ -447,6 +456,7 @@ func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
 	return nil
 }
 
+// Get retrieves a dataset from the database.
 func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	var (
 		valid  *bool
@@ -471,6 +481,7 @@ func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	return res, nil
 }
 
+// GetWithOwner retrieves a dataset from the database if the owner matches.
 func (db *DB) GetWithOwner(id uuid.UUID, owner uuid.UUID) (*models.Dataset, error) {
 	tx, err := db.Begin()
 	if err != nil {
@@ -513,6 +524,7 @@ func (tx *Tx) get(id uuid.UUID, key string) (*models.Dataset, error) {
 	return res, nil
 }
 
+// Delete removes one dataset from the database if the owner matches.
 func (db *DB) Delete(id uuid.UUID, owner *uuid.UUID) error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -539,6 +551,7 @@ func (db *DB) Delete(id uuid.UUID, owner *uuid.UUID) error {
 	return tx.Commit()
 }
 
+// ListAllForUid returns the list of datasets for a given user.
 func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	var list []*models.Dataset
 
@@ -571,4 +584,21 @@ func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	}
 
 	return list, nil
+}
+
+// ChangeOwnerTo updates a dataset's owner.
+func (db *DB) ChangeOwnerTo(id uuid.UUID, uid uuid.UUID) error {
+	tx, err := db.pool.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	tag, err := tx.Exec("UPDATE datasets SET owner = $1 WHERE id = $2", uid.Array(), id.Array())
+	if err != nil {
+		return handleError(err)
+	}
+	log.Println("tag:", tag)
+
+	return tx.Commit()
 }
