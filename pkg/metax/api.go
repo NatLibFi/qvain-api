@@ -615,7 +615,6 @@ func (api *MetaxService) Store(ctx context.Context, blob json.RawMessage) (json.
 	case 404:
 		return nil, &ApiError{"not found", body, res.StatusCode}
 	default:
-		fmt.Printf("boooodyyyy: %s\n", body)
 		return nil, &ApiError{"API returned error", body, res.StatusCode}
 	}
 

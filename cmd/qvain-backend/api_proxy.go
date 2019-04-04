@@ -9,8 +9,7 @@ import (
 
 	"github.com/NatLibFi/qvain-api/internal/sessions"
 	"github.com/NatLibFi/qvain-api/internal/version"
-	"github.com/NatLibFi/qvain-api/proxy"
-
+	"github.com/NatLibFi/qvain-api/pkg/proxy"
 	"github.com/rs/zerolog"
 )
 

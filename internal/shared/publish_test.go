@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/NatLibFi/qvain-api/internal/psql"
-	"github.com/NatLibFi/qvain-api/metax"
-	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/NatLibFi/qvain-api/pkg/models"
 
 	"github.com/wvh/uuid"
 )
@@ -16,7 +16,7 @@ import (
 var owner = uuid.MustFromString("053bffbcc41edad4853bea91fc42ea18")
 
 func readFile(tb testing.TB, fn string) []byte {
-	path := filepath.Join("..", "..", "metax", "testdata", fn)
+	path := filepath.Join("..", "..", "pkg", "metax", "testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		tb.Fatal(err)
@@ -98,9 +98,9 @@ func TestPublish(t *testing.T) {
 
 		id := dataset.Id
 
-		err = db.Store(dataset)
+		err = db.Create(dataset)
 		if err != nil {
-			t.Fatal("db.Store():", err)
+			t.Fatal("db.Create():", err)
 		}
 		//defer db.Delete(id, nil)
 

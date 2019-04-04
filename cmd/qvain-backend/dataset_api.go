@@ -8,8 +8,8 @@ import (
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/internal/sessions"
 	"github.com/NatLibFi/qvain-api/internal/shared"
-	"github.com/NatLibFi/qvain-api/metax"
-	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/NatLibFi/qvain-api/pkg/models"
 
 	"github.com/francoispqt/gojay"
 	"github.com/rs/zerolog"

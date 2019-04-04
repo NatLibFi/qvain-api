@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/metax"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
 	"github.com/wvh/uuid/flag"
 )
 

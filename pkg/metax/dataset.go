@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/pkg/models"
 	"github.com/wvh/uuid"
 )
 

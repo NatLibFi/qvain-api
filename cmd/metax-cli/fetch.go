@@ -9,7 +9,7 @@ import (
 
 	"github.com/NatLibFi/qvain-api/internal/psql"
 	"github.com/NatLibFi/qvain-api/internal/shared"
-	"github.com/NatLibFi/qvain-api/metax"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
 	"github.com/wvh/uuid"
 	"github.com/wvh/uuid/flag"
 )

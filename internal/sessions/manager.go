@@ -11,8 +11,7 @@ import (
 	"time"
 
 	"github.com/NatLibFi/qvain-api/internal/randomkey"
-	"github.com/NatLibFi/qvain-api/models"
-
+	"github.com/NatLibFi/qvain-api/pkg/models"
 	"github.com/francoispqt/gojay"
 	"github.com/gomodule/redigo/redis"
 	"github.com/muesli/cache2go"

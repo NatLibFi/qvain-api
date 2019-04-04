@@ -21,9 +21,8 @@ package main
 import (
 	"testing"
 
-	"github.com/NatLibFi/qvain-api/metax"
-
 	"encoding/json"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
 	//"github.com/mailru/easyjson"
 	"github.com/json-iterator/go"
 	"github.com/pquerna/ffjson/ffjson"

@@ -3,8 +3,7 @@ package sessions
 import (
 	"time"
 
-	"github.com/NatLibFi/qvain-api/models"
-
+	"github.com/NatLibFi/qvain-api/pkg/models"
 	"github.com/francoispqt/gojay"
 	"github.com/wvh/uuid"
 )

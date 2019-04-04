@@ -6,14 +6,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/NatLibFi/qvain-api/metax"
-	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/NatLibFi/qvain-api/pkg/models"
 
 	"github.com/wvh/uuid"
 )
 
 func readFile(tb testing.TB, fn string) []byte {
-	path := filepath.Join("..", "..", "metax", "testdata", fn)
+	path := filepath.Join("..", "..", "pkg", "metax", "testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		tb.Fatal(err)
@@ -30,9 +30,9 @@ func createDatasetFromFile(tb testing.TB, db *DB, fn string, owner uuid.UUID) uu
 	}
 	dataset.SetData(1, metax.SchemaIda, blob)
 
-	err = db.Store(dataset)
+	err = db.Create(dataset)
 	if err != nil {
-		tb.Fatal("db.Store():", err)
+		tb.Fatal("db.Create():", err)
 	}
 
 	return dataset.Id

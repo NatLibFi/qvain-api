@@ -5,8 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/models"
-
+	"github.com/NatLibFi/qvain-api/pkg/models"
 	"github.com/wvh/uuid"
 )
 
@@ -40,9 +39,9 @@ func TestDatasetNewVersion(t *testing.T) {
 
 		v1 = dataset.Id
 
-		err = db.Store(dataset)
+		err = db.Create(dataset)
 		if err != nil {
-			t.Fatal("db.Store():", err)
+			t.Fatal("db.Create():", err)
 		}
 		//defer db.Delete(id, nil)
 	})

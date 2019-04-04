@@ -37,7 +37,7 @@ const testDatasetFile = "new_created.json"
 var fastjsonParser fastjson.Parser
 
 func readFile(t *testing.T, fn string) []byte {
-	path := filepath.Join("..", "..", "metax", "testdata", fn)
+	path := filepath.Join("..", "..", "pkg", "metax", "testdata", fn)
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)

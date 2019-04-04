@@ -3,7 +3,7 @@ package psql
 import (
 	//"errors"
 
-	"github.com/NatLibFi/qvain-api/models"
+	"github.com/NatLibFi/qvain-api/pkg/models"
 	"github.com/wvh/uuid"
 	"log"
 	"time"
