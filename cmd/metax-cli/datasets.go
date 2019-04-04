@@ -62,7 +62,7 @@ func runDatasets(url string, args []string) error {
 	}
 
 	fmt.Println("querying metax datasets endpoint")
-	svc := metax.NewMetaxService(METAX_HOST)
+	svc := metax.NewMetaxService(METAX_HOST, metax.WithCredentials(os.Getenv("APP_METAX_API_USER"), os.Getenv("APP_METAX_API_PASS")))
 	// 053bffbcc41edad4853bea91fc42ea18
 	response, err := svc.Datasets(metax.WithOwner(owner.String()))
 	if err != nil {
