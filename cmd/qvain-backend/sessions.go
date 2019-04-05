@@ -19,9 +19,11 @@ import (
 const (
 	// projects are in `group_names` field
 	FairdataTokenProjectKey = "group_names"
+)
 
-	// silly prefix in projects to get rid of
-	FairdataTokenProjectPrefix = "fairdata:IDA01:"
+var (
+	// FairdataTokenProjectPrefixes are used to identify IDA projects from group_names field
+	FairdataTokenProjectPrefixes = []string{"fairdata:IDA01:", "IDA01:"}
 )
 
 // MakeSessionHandlerForExternalService is a callback function that creates a session for a user of an external service.
@@ -82,7 +84,7 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			}
 
 			// filter project names returned from the token to include only IDA project numbers
-			projects := filterOnAndTrimPrefix(claims.Projects, FairdataTokenProjectPrefix)
+			projects := filterOnAndTrimPrefix(claims.Projects, FairdataTokenProjectPrefixes...)
 			if len(projects) > 0 {
 				user.Projects = projects
 				logger.Debug().Strs("projects", projects).Msg("ida projects in token")
@@ -118,11 +120,14 @@ func makeOnFairdataLogin(metax *metax.MetaxService, db *psql.DB, logger zerolog.
 }
 
 // filterOnAndTrimPrefix filters a string slice in-place, returning only those items matching the given prefix, then trimming it.
-func filterOnAndTrimPrefix(in []string, prefix string) []string {
+func filterOnAndTrimPrefix(in []string, prefixes ...string) []string {
 	out := in[:0]
 	for _, project := range in {
-		if strings.HasPrefix(project, prefix) {
-			out = append(out, strings.TrimPrefix(project, prefix))
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(project, prefix) {
+				out = append(out, strings.TrimPrefix(project, prefix))
+				break
+			}
 		}
 	}
 	return out
