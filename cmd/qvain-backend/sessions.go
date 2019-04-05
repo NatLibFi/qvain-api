@@ -61,6 +61,7 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 
 		// clumsy but the only way to go
 		var claims struct {
+			CSCUserName   string   `json:"CSCUserName"`
 			Name          string   `json:"name"`
 			Email         string   `json:"email"`
 			EmailVerified bool     `json:"email_verified"`
@@ -74,9 +75,13 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			// let user be nil pointer
 			logger.Warn().Err(err).Msg("failed to get token claims")
 		} else {
+			identity := idToken.Subject
+			if claims.CSCUserName != "" {
+				identity = claims.CSCUserName
+			}
 			user = &models.User{
 				Uid:          uid,
-				Identity:     idToken.Subject,
+				Identity:     identity,
 				Service:      svc,
 				Name:         claims.Name,
 				Email:        claims.Email,
