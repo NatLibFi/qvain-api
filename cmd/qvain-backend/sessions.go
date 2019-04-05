@@ -62,6 +62,8 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 		// clumsy but the only way to go
 		var claims struct {
 			CSCUserName   string   `json:"CSCUserName"`
+			GivenName     string   `json:"given_name"`
+			FamilyName    string   `json:"family_name"`
 			Name          string   `json:"name"`
 			Email         string   `json:"email"`
 			EmailVerified bool     `json:"email_verified"`
@@ -79,11 +81,15 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			if claims.CSCUserName != "" {
 				identity = claims.CSCUserName
 			}
+			name := claims.Name
+			if claims.GivenName != "" || claims.FamilyName != "" {
+				name = strings.TrimSpace(claims.GivenName + " " + claims.FamilyName)
+			}
 			user = &models.User{
 				Uid:          uid,
 				Identity:     identity,
 				Service:      svc,
-				Name:         claims.Name,
+				Name:         name,
 				Email:        claims.Email,
 				Organisation: claims.Org,
 			}
