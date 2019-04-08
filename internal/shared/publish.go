@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/psql"
-	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/CSCfi/qvain-api/internal/psql"
+	"github.com/CSCfi/qvain-api/pkg/metax"
 	"github.com/wvh/uuid"
 )
 

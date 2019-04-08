@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/randomkey"
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/internal/randomkey"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/francoispqt/gojay"
 	"github.com/gomodule/redigo/redis"
 	"github.com/muesli/cache2go"

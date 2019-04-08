@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	//"github.com/NatLibFi/qvain-api/models"
-	"github.com/NatLibFi/qvain-api/internal/psql"
+	//"github.com/CSCfi/qvain-api/models"
+	"github.com/CSCfi/qvain-api/internal/psql"
 	"github.com/wvh/uuid"
 )
 

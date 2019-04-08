@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/NatLibFi/qvain-api/internal/psql"
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/internal/psql"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/wvh/uuid/flag"
 )
 

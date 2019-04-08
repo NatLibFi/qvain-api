@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/NatLibFi/qvain-api/internal/es"
+	"github.com/CSCfi/qvain-api/internal/es"
 )
 
 func main() {

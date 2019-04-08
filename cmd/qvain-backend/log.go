@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NatLibFi/qvain-api/internal/caller"
+	"github.com/CSCfi/qvain-api/internal/caller"
 
 	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog"

@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"syscall"
 
-	"github.com/NatLibFi/qvain-api/internal/sessions"
-	"github.com/NatLibFi/qvain-api/internal/version"
-	"github.com/NatLibFi/qvain-api/pkg/proxy"
+	"github.com/CSCfi/qvain-api/internal/sessions"
+	"github.com/CSCfi/qvain-api/internal/version"
+	"github.com/CSCfi/qvain-api/pkg/proxy"
 	"github.com/rs/zerolog"
 )
 

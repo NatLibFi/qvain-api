@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/gomodule/redigo/redis"
 	"github.com/wvh/uuid"
 )

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/randomkey"
+	"github.com/CSCfi/qvain-api/internal/randomkey"
 
 	gooidc "github.com/coreos/go-oidc"
 	"github.com/rs/zerolog"

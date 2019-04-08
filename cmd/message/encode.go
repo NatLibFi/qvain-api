@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/NatLibFi/qvain-api/internal/secmsg"
+	"github.com/CSCfi/qvain-api/internal/secmsg"
 )
 
 const DefaultKeyEnvName = "APP_TOKEN_KEY"

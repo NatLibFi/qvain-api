@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/version"
-	"github.com/NatLibFi/qvain-api/pkg/env" //"github.com/NatLibFi/qvain-api/internal/jwt"
+	"github.com/CSCfi/qvain-api/internal/version"
+	"github.com/CSCfi/qvain-api/pkg/env" //"github.com/CSCfi/qvain-api/internal/jwt"
 )
 
 const (

@@ -1,6 +1,8 @@
-[![GoDoc](https://godoc.org/github.com/NatLibFi/qvain-api?status.svg)](https://godoc.org/github.com/NatLibFi/qvain-api)
+[![GoDoc](https://godoc.org/github.com/CSCfi/qvain-api?status.svg)](https://godoc.org/github.com/CSCfi/qvain-api)
+<!--
 [![Build Status](https://travis-ci.org/NatLibFi/qvain-api.svg?branch=next)](https://travis-ci.org/NatLibFi/qvain-api)
-[![Go Report Card](https://goreportcard.com/badge/github.com/NatLibFi/qvain-api)](https://goreportcard.com/report/github.com/NatLibFi/qvain-api)
+-->
+[![Go Report Card](https://goreportcard.com/badge/github.com/CSCfi/qvain-api)](https://goreportcard.com/report/github.com/CSCfi/qvain-api)
 
 # Qvain API
 
@@ -26,7 +28,7 @@ Before Go 1.11, the language did not have built-in dependency management; `go ge
 If you run a recent version of Go, just clone the repository wherever you want. The build process will automatically install the correct dependency versions from the lock file; you don't need to do anything.
 
 ```shell
-$ git clone https://github.com/NatLibFi/qvain-api
+$ git clone https://github.com/CSCfi/qvain-api
 $ cd qvain-api
 ```
 
@@ -36,9 +38,9 @@ If you can't update to a recent version of Go, you'll have to make sure the sour
 $ go env GOPATH
 /home/jack/GoPath
 $ cd $GOPATH
-$ mkdir -p src/github.com/NatLibFi
-$ cd src/github.com/NatLibFi
-$ git clone https://github.com/NatLibFi/qvain-api
+$ mkdir -p src/github.com/CSCfi
+$ cd src/github.com/CSCfi
+$ git clone https://github.com/CSCfi/qvain-api
 $ cd qvain-api
 $ go get -v ./cmd/...
 ```

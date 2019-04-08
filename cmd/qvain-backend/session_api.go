@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/psql"
-	"github.com/NatLibFi/qvain-api/internal/secmsg"
-	"github.com/NatLibFi/qvain-api/internal/sessions"
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/internal/psql"
+	"github.com/CSCfi/qvain-api/internal/secmsg"
+	"github.com/CSCfi/qvain-api/internal/sessions"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/francoispqt/gojay"
 	"github.com/rs/zerolog"
 )

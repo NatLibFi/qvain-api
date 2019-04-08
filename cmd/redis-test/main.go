@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/NatLibFi/qvain-api/internal/redis"
+	"github.com/CSCfi/qvain-api/internal/redis"
 	redigo "github.com/gomodule/redigo/redis" // real redis package, for helper functions
 )
 

@@ -3,7 +3,7 @@ package psql
 import (
 	"encoding/json"
 
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/wvh/uuid"
 )
 

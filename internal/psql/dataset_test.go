@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/pkg/models"
+	"github.com/CSCfi/qvain-api/pkg/models"
 	"github.com/wvh/uuid"
 )
 

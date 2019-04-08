@@ -3,9 +3,9 @@ package main
 import (
 	"net/http"
 
-	//"github.com/NatLibFi/qvain-api/internal/jwt"
-	"github.com/NatLibFi/qvain-api/internal/oidc"
-	//"github.com/NatLibFi/qvain-api/orcid"
+	//"github.com/CSCfi/qvain-api/internal/jwt"
+	"github.com/CSCfi/qvain-api/internal/oidc"
+	//"github.com/CSCfi/qvain-api/orcid"
 
 	"github.com/francoispqt/gojay"
 	"github.com/rs/zerolog"

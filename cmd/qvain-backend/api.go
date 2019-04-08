@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/CSCfi/qvain-api/pkg/metax"
 	"github.com/rs/zerolog"
 )
 

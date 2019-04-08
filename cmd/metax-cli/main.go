@@ -17,7 +17,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/NatLibFi/qvain-api/internal/version"
+	"github.com/CSCfi/qvain-api/internal/version"
 
 	"github.com/rs/zerolog"
 )

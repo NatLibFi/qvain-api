@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/pkg/metax"
-	"github.com/wvh/uuid/flag"
+	"os"
+
+	"github.com/CSCfi/qvain-api/pkg/metax"
+	uuidflag "github.com/wvh/uuid/flag"
 )
 
 var stringIfMissing = ""

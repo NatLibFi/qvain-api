@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/NatLibFi/qvain-api/internal/psql"
-	"github.com/NatLibFi/qvain-api/pkg/metax"
+	"github.com/CSCfi/qvain-api/internal/psql"
+	"github.com/CSCfi/qvain-api/pkg/metax"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 	"github.com/wvh/uuid"

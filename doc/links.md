@@ -10,17 +10,17 @@ Note that some of the linked services might require authentication.
 _links to Qvain related resources_
 
 - Qvain backend:
-  - [Github](https://github.com/NatLibFi/qvain-api) repository
-  - [Github issues](https://github.com/NatLibFi/qvain-api/issues) – report bug reports here
+  - [Github](https://github.com/CSCfi/qvain-api) repository
+  - [Github issues](https://github.com/CSCfi/qvain-api/issues) – report bug reports here
   - [Jira bug tracker](https://jira.eduuni.fi/projects/CSCQVAIN) at CSC – for planning and service integration
   - Documentation:
     - [Rest API](./api.md)
     - [Metax API](./metax_api.md) dependencies
     - [Go package dependencies](./go_dependencies.md) [auto-generated]
 - Qvain frontend:
-  - [Github](https://github.com/NatLibFi/qvain-js) repository
+  - [Github](https://github.com/CSCfi/qvain-js) repository
 - [General overview](https://www.kiwi.fi/display/ATT/Technical+overview) at the National Library of Finland's [ATT/Tajua project wiki](https://www.kiwi.fi/pages/viewpage.action?pageId=53839580)
-- [Roadmap](https://github.com/NatLibFi/qvain-js/blob/next/doc/roadmap.md) including the what, why and how of Qvain
+- [Roadmap](https://github.com/CSCfi/qvain-js/blob/next/doc/roadmap.md) including the what, why and how of Qvain
 
 
 ## Metax

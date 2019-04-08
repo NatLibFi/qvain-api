@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/NatLibFi/qvain-api/internal/selfcheck"
+	"github.com/CSCfi/qvain-api/internal/selfcheck"
 )
 
 func main() {

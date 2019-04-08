@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NatLibFi/qvain-api/internal/psql"
+	"github.com/CSCfi/qvain-api/internal/psql"
 	"github.com/francoispqt/gojay"
 	"github.com/wvh/uuid"
 )
