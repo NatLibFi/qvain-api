@@ -77,6 +77,33 @@ func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid
 	written := 0
 	success := false
 
+	// get existing Qvain datasets for user
+	userDatasets, err := db.GetAllForUid(uid)
+	if err != nil {
+		syncLogger.Error().Err(err).Msg("failed to get user datasets")
+	}
+
+	// Map Metax identifier in Qvain dataset to the dataset id.
+	// Used when a dataset from Metax does not have a Qvain id in its editor metadata.
+	metaxDatasetQvainId := make(map[uuid.UUID]*uuid.UUID)
+	if total > 0 {
+		for _, ds := range userDatasets {
+			if ds.Family() != metax.MetaxDatasetFamily {
+				continue
+			}
+			record := metax.MetaxRawRecord{ds.Blob()}
+			metaxIdentifier, _ := record.Identifier()
+			if metaxIdentifier == nil {
+				continue
+			}
+			if _, exists := metaxDatasetQvainId[*metaxIdentifier]; exists {
+				syncLogger.Warn().Str("identifier", metaxIdentifier.String()).Msg("multiple datasets have the same Metax indentifier")
+				continue
+			}
+			metaxDatasetQvainId[*metaxIdentifier] = &ds.Id
+		}
+	}
+
 	// loop until all read, error or timeout
 Done:
 	for {
@@ -89,10 +116,25 @@ Done:
 
 			read++
 
+			// create dataset, use Qvain id from editor metadata if available
 			dataset, isNew, err := fdDataset.ToQvain()
 			if err != nil {
 				syncLogger.Debug().Err(err).Int("read", read).Msg("error parsing dataset, skipping")
 				continue
+			}
+
+			// was the Metax dataset not from Qvain?
+			if isNew {
+				// check if we already have a dataset with the same Metax identifier
+				identifier, _ := fdDataset.Identifier()
+				if identifier != nil {
+					newId, found := metaxDatasetQvainId[*identifier]
+					if found {
+						// update the existing dataset blob instead of creating a new dataset
+						isNew = false
+						dataset.Id = *newId
+					}
+				}
 			}
 
 			if isNew {
@@ -106,7 +148,7 @@ Done:
 				dataset.Creator = uid
 				dataset.Owner = uid
 
-				// it comes from upstream, so I guess it's "published" and "valid"
+				// dataset comes from upstream, so consider it published and valid
 				dataset.Published = true
 				dataset.SetValid(true)
 

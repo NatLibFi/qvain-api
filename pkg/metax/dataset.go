@@ -138,7 +138,8 @@ func (dataset *MetaxDataset) UpdateData(family int, schema string, blob []byte, 
 
 // MetaxRecord is a helper struct to parse the fields we need from a Metax dataset.
 type MetaxRecord struct {
-	Id int64 `json:"id"`
+	Id         int64  `json:"id"`
+	Identifier string `json:"identifier"`
 
 	// deprecated
 	/*
@@ -234,6 +235,22 @@ func (raw MetaxRawRecord) GetQvainId(mrec *MetaxRecord) (*uuid.UUID, error) {
 	}
 
 	return &qid, nil
+}
+
+// Identifier parses the Metax identifier value from a MetaxRawRecord.
+func (raw MetaxRawRecord) Identifier() (*uuid.UUID, error) {
+	var mrec MetaxRecord
+	var err error
+
+	err = json.Unmarshal(raw.RawMessage, &mrec)
+	if err != nil {
+		return nil, err
+	}
+	uid, err := uuid.FromString(mrec.Identifier)
+	if err != nil {
+		return nil, err
+	}
+	return &uid, nil
 }
 
 // ToQvain converts a Metax record in raw JSON to a Qvain record using the values in the Editor object.
