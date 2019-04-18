@@ -3,10 +3,11 @@ package psql
 import (
 	//"errors"
 
-	"github.com/CSCfi/qvain-api/pkg/models"
-	"github.com/wvh/uuid"
 	"log"
 	"time"
+
+	"github.com/CSCfi/qvain-api/pkg/models"
+	"github.com/wvh/uuid"
 )
 
 // Create creates a new dataset. It is a convenience wrapper for the Create method on transactions.
@@ -551,6 +552,42 @@ func (db *DB) Delete(id uuid.UUID, owner *uuid.UUID) error {
 	return tx.Commit()
 }
 
+// GetAllForUid returns all datasets for a given user.
+func (db *DB) GetAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
+	var list []*models.Dataset
+
+	rows, err := db.pool.Query("select id, creator, owner, family, schema, valid, blob from datasets where owner=$1", uid.Array())
+	if err != nil {
+		return list, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var dataset models.Dataset
+		var (
+			family int
+			schema string
+			valid  bool
+			blob   []byte
+		)
+		err = rows.Scan(dataset.Id.Array(), dataset.Creator.Array(), dataset.Owner.Array(), &family, &schema, &valid, &blob)
+		if err != nil {
+			return nil, err
+		}
+		dataset.SetData(family, schema, blob)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, &dataset)
+	}
+
+	if rows.Err() != nil {
+		return []*models.Dataset{}, rows.Err()
+	}
+
+	return list, nil
+}
+
 // ListAllForUid returns the list of datasets for a given user.
 func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	var list []*models.Dataset
@@ -568,7 +605,7 @@ func (db *DB) ListAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 			schema string
 			valid  bool
 		)
-		err = rows.Scan(dataset.Id, dataset.Creator, dataset.Owner, family, schema, valid)
+		err = rows.Scan(dataset.Id.Array(), dataset.Creator.Array(), dataset.Owner.Array(), &family, &schema, &valid)
 		if err != nil {
 			return nil, err
 		}
