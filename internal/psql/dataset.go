@@ -202,7 +202,7 @@ func (tx *Tx) update(id uuid.UUID, blob []byte) error {
 
 // internal update, service triggered
 func (tx *Tx) updateByService(id uuid.UUID, blob []byte) error {
-	ct, err := tx.Exec("UPDATE datasets SET synced = now(), seq = seq + 1, blob = $2 WHERE id = $1", id.Array(), blob)
+	ct, err := tx.Exec("UPDATE datasets SET synced = now(), modified = now(), seq = seq + 1, blob = $2 WHERE id = $1", id.Array(), blob)
 	if err != nil {
 		return err
 	}
