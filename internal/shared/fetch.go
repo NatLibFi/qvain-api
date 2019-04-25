@@ -85,22 +85,21 @@ func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid
 
 	// Map Metax identifier in Qvain dataset to the dataset id.
 	// Used when a dataset from Metax does not have a Qvain id in its editor metadata.
-	metaxDatasetQvainId := make(map[uuid.UUID]*uuid.UUID)
+	metaxDatasetQvainId := make(map[string]*uuid.UUID)
 	if total > 0 {
 		for _, ds := range userDatasets {
 			if ds.Family() != metax.MetaxDatasetFamily {
 				continue
 			}
-			record := metax.MetaxRawRecord{ds.Blob()}
-			metaxIdentifier, _ := record.Identifier()
-			if metaxIdentifier == nil {
+			metaxIdentifier := metax.GetIdentifier(ds.Blob())
+			if metaxIdentifier == "" {
 				continue
 			}
-			if _, exists := metaxDatasetQvainId[*metaxIdentifier]; exists {
-				syncLogger.Warn().Str("identifier", metaxIdentifier.String()).Msg("multiple datasets have the same Metax indentifier")
+			if _, exists := metaxDatasetQvainId[metaxIdentifier]; exists {
+				syncLogger.Warn().Str("identifier", metaxIdentifier).Msg("multiple datasets have the same Metax indentifier")
 				continue
 			}
-			metaxDatasetQvainId[*metaxIdentifier] = &ds.Id
+			metaxDatasetQvainId[metaxIdentifier] = &ds.Id
 		}
 	}
 
@@ -126,9 +125,9 @@ Done:
 			// was the Metax dataset not from Qvain?
 			if isNew {
 				// check if we already have a dataset with the same Metax identifier
-				identifier, _ := fdDataset.Identifier()
-				if identifier != nil {
-					newId, found := metaxDatasetQvainId[*identifier]
+				identifier := metax.GetIdentifier(fdDataset.RawMessage)
+				if identifier != "" {
+					newId, found := metaxDatasetQvainId[identifier]
 					if found {
 						// update the existing dataset blob instead of creating a new dataset
 						isNew = false

@@ -237,22 +237,6 @@ func (raw MetaxRawRecord) GetQvainId(mrec *MetaxRecord) (*uuid.UUID, error) {
 	return &qid, nil
 }
 
-// Identifier parses the Metax identifier value from a MetaxRawRecord.
-func (raw MetaxRawRecord) Identifier() (*uuid.UUID, error) {
-	var mrec MetaxRecord
-	var err error
-
-	err = json.Unmarshal(raw.RawMessage, &mrec)
-	if err != nil {
-		return nil, err
-	}
-	uid, err := uuid.FromString(mrec.Identifier)
-	if err != nil {
-		return nil, err
-	}
-	return &uid, nil
-}
-
 // ToQvain converts a Metax record in raw JSON to a Qvain record using the values in the Editor object.
 //
 // If the Editor metadata contains valid data, consider the dataset ours and populate (all) the Dataset struct fields; boolean New is false.
