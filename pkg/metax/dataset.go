@@ -149,6 +149,8 @@ type MetaxRecord struct {
 		ModifiedByApi    *string `json:"modified_by_api"`
 	*/
 
+	DataCatalog *DataCatalog `json:"data_catalog"`
+
 	MetadataProviderUser *string `json:"metadata_provider_user"`
 
 	DateCreated  *time.Time `json:"date_created"`
@@ -158,6 +160,11 @@ type MetaxRecord struct {
 
 	ResearchDataset json.RawMessage `json:"research_dataset"`
 	Contract        json.RawMessage `json:"contract"`
+}
+
+// DataCatalog contains the catalog identifier
+type DataCatalog struct {
+	Identifier *string `json:"identifier"`
 }
 
 // Editor is the Go representation of the Editor object in a Metax record.
@@ -277,7 +284,11 @@ func (raw MetaxRawRecord) ToQvain() (*models.Dataset, bool, error) {
 	} else {
 		qdataset.Id = *qid
 	}
-	qdataset.SetData(MetaxDatasetFamily, "metax", raw.RawMessage)
+	schema, ok := CatalogIdentifiers[*mrec.DataCatalog.Identifier]
+	if !ok {
+		return nil, isNew, fmt.Errorf("Metax dataset schema unknown or missing: %s", *mrec.DataCatalog.Identifier)
+	}
+	qdataset.SetData(MetaxDatasetFamily, schema, raw.RawMessage)
 
 	return qdataset, isNew, nil
 }

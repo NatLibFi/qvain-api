@@ -10,6 +10,12 @@ const (
 )
 
 var (
+	// CatalogIdentifiers are used to identify schema in datasets imported from Metax.
+	CatalogIdentifiers = map[string]string{
+		"urn:nbn:fi:att:data-catalog-ida": SchemaIda,
+		"urn:nbn:fi:att:data-catalog-att": SchemaAtt,
+	}
+
 	// templates variable contains the base templates for empty metax datasets.
 	templates = map[string]json.RawMessage{
 		SchemaIda: json.RawMessage(`
