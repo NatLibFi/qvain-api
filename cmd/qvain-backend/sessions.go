@@ -50,11 +50,7 @@ func MakeSessionHandlerForExternalService(mgr *sessions.Manager, db *psql.DB, lo
 // This particular version handles token fields specific to the Fairdata authentication proxy; see also generic version above.
 func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin loginHook, logger zerolog.Logger, svc string) func(http.ResponseWriter, *http.Request, *oauth2.Token, *gooidc.IDToken) error {
 	return func(w http.ResponseWriter, r *http.Request, oauthToken *oauth2.Token, idToken *gooidc.IDToken) error {
-		logger.Debug().Str("svc", svc).Str("identity", idToken.Subject).Msg("session callback called")
-		uid, isNew, err := db.RegisterIdentity(svc, idToken.Subject)
-		if err != nil {
-			return err
-		}
+		logger.Debug().Str("svc", svc).Str("subject", idToken.Subject).Msg("session callback called")
 
 		// it is somewhat ok if this stays a nil pointer
 		var user *models.User
@@ -76,33 +72,38 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 		if err := idToken.Claims(&claims); err != nil {
 			// let user be nil pointer
 			logger.Warn().Err(err).Msg("failed to get token claims")
-		} else {
-			identity := idToken.Subject
-			if claims.CSCUserName != "" {
-				identity = claims.CSCUserName
-			}
-			name := claims.Name
-			if claims.GivenName != "" || claims.FamilyName != "" {
-				name = strings.TrimSpace(claims.GivenName + " " + claims.FamilyName)
-			}
-			user = &models.User{
-				Uid:          uid,
-				Identity:     identity,
-				Service:      svc,
-				Name:         name,
-				Email:        claims.Email,
-				Organisation: claims.Org,
-			}
-
-			// filter project names returned from the token to include only IDA project numbers
-			projects := filterOnAndTrimPrefix(claims.Projects, FairdataTokenProjectPrefixes...)
-			if len(projects) > 0 {
-				user.Projects = projects
-				logger.Debug().Strs("projects", projects).Msg("ida projects in token")
-			}
+			return err
+		}
+		identity := idToken.Subject
+		if claims.CSCUserName != "" {
+			identity = claims.CSCUserName
+		}
+		uid, isNew, err := db.RegisterIdentity(svc, identity)
+		if err != nil {
+			return err
 		}
 
-		sid, err := mgr.NewLoginWithCookie(
+		name := claims.Name
+		if claims.GivenName != "" || claims.FamilyName != "" {
+			name = strings.TrimSpace(claims.GivenName + " " + claims.FamilyName)
+		}
+		user = &models.User{
+			Uid:          uid,
+			Identity:     identity,
+			Service:      svc,
+			Name:         name,
+			Email:        claims.Email,
+			Organisation: claims.Org,
+		}
+
+		// filter project names returned from the token to include only IDA project numbers
+		projects := filterOnAndTrimPrefix(claims.Projects, FairdataTokenProjectPrefixes...)
+		if len(projects) > 0 {
+			user.Projects = projects
+			logger.Debug().Strs("projects", projects).Msg("ida projects in token")
+		}
+
+		_, err = mgr.NewLoginWithCookie(
 			w,
 			&uid,
 			user,
@@ -112,12 +113,11 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			return err
 		}
 
-		// TODO: remove sid
-		logger.Info().Str("svc", svc).Str("identity", idToken.Subject).Str("uid", uid.String()).Bool("new", isNew).Str("sid", sid).Msg("new session")
+		logger.Info().Str("svc", svc).Str("identity", idToken.Subject).Str("uid", uid.String()).Bool("new", isNew).Msg("new session")
+
 		if onLogin != nil {
 			go onLogin(user)
 		}
-
 		return nil
 	}
 }
