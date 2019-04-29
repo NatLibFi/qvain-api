@@ -16,12 +16,12 @@ const (
 // SetSessionCookie writes the session id cookie to the response.
 func SetSessionCookie(w http.ResponseWriter, sid string) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   SessionCookieName,
-		Value:  sid,
-		Path:   SessionCookiePath,
-		MaxAge: int(DefaultExpiration / time.Second),
+		Name:  SessionCookieName,
+		Value: sid,
+		Path:  SessionCookiePath,
+		//MaxAge: int(DefaultExpiration / time.Second),
 		// for old browsers; if not set, this will be a "session cookie"
-		Expires:  time.Now().Add(DefaultExpiration),
+		//Expires:  time.Now().Add(DefaultExpiration),
 		Secure:   true,
 		HttpOnly: true,
 	})

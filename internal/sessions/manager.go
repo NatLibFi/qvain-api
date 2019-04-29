@@ -18,18 +18,19 @@ import (
 	"github.com/wvh/uuid"
 )
 
-const DefaultExpiration = 60 * time.Minute
+// DefaultExpiration is the default duration before a session expires
+const DefaultExpiration = 2 * 60 * time.Minute
 
 type sidGenerator func(string) (string, error)
 
-// SessionManager handles the actual storage and retrieval of sessions.
+// Manager handles the actual storage and retrieval of sessions.
 type Manager struct {
 	cache       *cache2go.CacheTable
 	onToken     func(string) (string, error)
 	genTokenSid sidGenerator
 }
 
-// NewSessionManager creates a new session storage.
+// NewManager creates a new session storage.
 func NewManager() *Manager {
 	return &Manager{
 		cache: cache2go.Cache("sessions"),
