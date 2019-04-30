@@ -3,6 +3,7 @@ package oidc
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -24,6 +25,8 @@ const (
 	// skipRedirect dumps the token to the end-user's browser instead of redirecting back to the frontend.
 	skipRedirect = false
 )
+
+var ErrMissingCSCUserName = errors.New("Missing CSCUserName field")
 
 // OidcClient holds the OpenID Connect and OAuth2 configuration for an authentication provider.
 type OidcClient struct {
@@ -166,6 +169,11 @@ func (client *OidcClient) Callback() http.HandlerFunc {
 		//if client.OnLogin != nil && client.OnLogin(w, r, idToken.Subject, oauth2Token.Expiry) != nil {
 		if client.OnLogin != nil {
 			if err := client.OnLogin(w, r, oauth2Token, idToken); err != nil {
+				if err == ErrMissingCSCUserName {
+					http.Redirect(w, r, client.frontendUrl+"?missingcsc=1", http.StatusFound)
+					return
+				}
+
 				client.logger.Error().Err(err).Str("sub", idToken.Subject).Msg("OnLogin callback failed")
 				http.Error(w, "Login failed", http.StatusInternalServerError)
 				return

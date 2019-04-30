@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CSCfi/qvain-api/internal/oidc"
 	"github.com/CSCfi/qvain-api/internal/psql"
 	"github.com/CSCfi/qvain-api/internal/sessions"
 	"github.com/CSCfi/qvain-api/internal/shared"
@@ -74,10 +75,12 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			logger.Warn().Err(err).Msg("failed to get token claims")
 			return err
 		}
-		identity := idToken.Subject
-		if claims.CSCUserName != "" {
-			identity = claims.CSCUserName
+
+		if claims.CSCUserName == "" {
+			return oidc.ErrMissingCSCUserName
 		}
+		identity := claims.CSCUserName
+
 		uid, isNew, err := db.RegisterIdentity(svc, identity)
 		if err != nil {
 			return err
