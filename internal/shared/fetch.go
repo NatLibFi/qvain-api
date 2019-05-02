@@ -85,12 +85,16 @@ func fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid
 
 	// Map Metax identifier in Qvain dataset to the dataset id.
 	// Used when a dataset from Metax does not have a Qvain id in its editor metadata.
+	// Also get per-dataset timestamp of last sync.
 	metaxDatasetQvainId := make(map[string]*uuid.UUID)
+	qvainDatasetSyncTime := make(map[uuid.UUID]time.Time)
 	if total > 0 {
 		for _, ds := range userDatasets {
 			if ds.Family() != metax.MetaxDatasetFamily {
 				continue
 			}
+
+			qvainDatasetSyncTime[ds.Id] = ds.Synced
 			metaxIdentifier := metax.GetIdentifier(ds.Blob())
 			if metaxIdentifier == "" {
 				continue
@@ -156,6 +160,16 @@ Done:
 					continue
 				}
 			} else {
+				// check if we have already synced the Qvain dataset based on modification dates
+				modified := metax.GetModificationDate(dataset.Blob())
+				if !modified.IsZero() && !modified.After(qvainDatasetSyncTime[dataset.Id]) {
+					syncLogger.Debug().Str("id", dataset.Id.String()).Msg("dataset not modified in Metax after last sync")
+					if err = batch.UpdateSynced(dataset.Id); err != nil {
+						syncLogger.Debug().Err(err).Int("read", read).Str("id", dataset.Id.String()).Msg("could't update sync timestamp")
+					}
+					continue
+				}
+
 				if err = batch.Update(dataset.Id, dataset.Blob()); err != nil {
 					syncLogger.Debug().Err(err).Int("read", read).Str("id", dataset.Id.String()).Msg("can't update dataset")
 					continue

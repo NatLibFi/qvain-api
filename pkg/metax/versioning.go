@@ -1,6 +1,8 @@
 package metax
 
 import (
+	"time"
+
 	"github.com/tidwall/gjson"
 )
 
@@ -22,6 +24,12 @@ var (
 
 	// QvainId is the key with the identifier "qvain".
 	QvainIdentifierKey = "identifier"
+
+	// DateCreatedKey is the key for the Metax dataset creation timestamp.
+	DateCreatedKey = "date_created"
+
+	// DateModifiedKey is the key for the Metax dataset modification timestamp.
+	DateModifiedKey = "date_modified"
 )
 
 func GetIdentifier(blob []byte) string {
@@ -30,6 +38,18 @@ func GetIdentifier(blob []byte) string {
 	}
 
 	return gjson.GetBytes(blob, IdentifierKey).String()
+}
+
+func GetModificationDate(blob []byte) time.Time {
+	if len(blob) < 1 {
+		return time.Time{}
+	}
+
+	val := gjson.GetBytes(blob, DateModifiedKey).Time()
+	if val.IsZero() {
+		val = gjson.GetBytes(blob, DateCreatedKey).Time()
+	}
+	return val
 }
 
 func IsPublished(blob []byte) bool {

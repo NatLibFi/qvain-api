@@ -97,7 +97,7 @@ func (tx *Tx) createWithMetadata(dataset *models.Dataset) error {
 func (tx *Tx) StoreNewVersion(basedOn uuid.UUID, id uuid.UUID, created time.Time, blob []byte) error {
 	tag, err := tx.Exec(`
 	INSERT INTO datasets (id, creator, owner, created, synced, published, valid, family, schema, blob)
-		SELECT $2, creator, owner, $3, now(), true, true, family, schema, $4
+		SELECT $2, creator, owner, $3, $3, true, true, family, schema, $4
 		FROM datasets
 		WHERE id = $1
 	`, basedOn.Array(), id.Array(), created, blob)
@@ -189,6 +189,20 @@ func (db *DB) UpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) error 
 // internal update, user triggered
 func (tx *Tx) update(id uuid.UUID, blob []byte) error {
 	ct, err := tx.Exec("UPDATE datasets SET modified = now(), seq = seq + 1, blob = $2 WHERE id = $1", id.Array(), blob)
+	if err != nil {
+		return err
+	}
+
+	if ct.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
+}
+
+// internal update synced, service triggered
+func (tx *Tx) updateSyncedByService(id uuid.UUID) error {
+	ct, err := tx.Exec("UPDATE datasets SET synced = now(), seq = seq + 1 WHERE id = $1", id.Array())
 	if err != nil {
 		return err
 	}
@@ -327,14 +341,15 @@ func (db *DB) SmartUpdateWithOwner(id uuid.UUID, blob []byte, owner uuid.UUID) e
 
 // StorePublished saves a published dataset to the database and marks it as published.
 // TODO: handle empty blob
-func (db *DB) StorePublished(id uuid.UUID, blob []byte) error {
+func (db *DB) StorePublished(id uuid.UUID, blob []byte, synced time.Time) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	ct, err := tx.Exec("UPDATE datasets SET blob = $2, published = true, synced = now(), seq = seq + 1 WHERE id = $1", id.Array(), blob)
+	ct, err := tx.Exec("UPDATE datasets SET blob = $2, published = true, synced = $3, seq = seq + 1 WHERE id = $1",
+		id.Array(), blob, synced)
 	if err != nil {
 		return handleError(err)
 	}
@@ -405,7 +420,7 @@ func (db *DB) CheckOwner(id uuid.UUID, owner uuid.UUID) (err error) {
 }
 
 // MarkPublished marks a dataset as published and updates its sync time. It does not do owner checks.
-func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
+/* func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -455,7 +470,7 @@ func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
 	}
 
 	return nil
-}
+} */
 
 // Get retrieves a dataset from the database.
 func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
@@ -556,7 +571,7 @@ func (db *DB) Delete(id uuid.UUID, owner *uuid.UUID) error {
 func (db *DB) GetAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	var list []*models.Dataset
 
-	rows, err := db.pool.Query("select id, creator, owner, family, schema, valid, blob from datasets where owner=$1", uid.Array())
+	rows, err := db.pool.Query("select id, creator, owner, synced, family, schema, valid, blob from datasets where owner=$1", uid.Array())
 	if err != nil {
 		return list, err
 	}
@@ -565,14 +580,18 @@ func (db *DB) GetAllForUid(uid uuid.UUID) ([]*models.Dataset, error) {
 	for rows.Next() {
 		var dataset models.Dataset
 		var (
+			synced *time.Time
 			family int
 			schema string
 			valid  bool
 			blob   []byte
 		)
-		err = rows.Scan(dataset.Id.Array(), dataset.Creator.Array(), dataset.Owner.Array(), &family, &schema, &valid, &blob)
+		err = rows.Scan(dataset.Id.Array(), dataset.Creator.Array(), dataset.Owner.Array(), &synced, &family, &schema, &valid, &blob)
 		if err != nil {
 			return nil, err
+		}
+		if synced != nil {
+			dataset.Synced = *synced
 		}
 		dataset.SetData(family, schema, blob)
 		if err != nil {

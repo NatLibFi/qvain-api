@@ -40,6 +40,10 @@ func (b *BatchManager) CreateWithMetadata(dataset *models.Dataset) error {
 	return b.tx.createWithMetadata(dataset)
 }
 
+func (b *BatchManager) UpdateSynced(id uuid.UUID) error {
+	return b.tx.updateSyncedByService(id)
+}
+
 func (b *BatchManager) Update(id uuid.UUID, blob []byte) error {
 	return b.tx.updateByService(id, blob)
 }

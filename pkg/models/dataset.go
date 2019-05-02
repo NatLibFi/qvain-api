@@ -2,8 +2,9 @@ package models
 
 import (
 	"errors"
-	"github.com/wvh/uuid"
 	"time"
+
+	"github.com/wvh/uuid"
 )
 
 var (

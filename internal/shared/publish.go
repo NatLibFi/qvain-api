@@ -64,7 +64,13 @@ func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID
 		return "", "", nil, ErrNoIdentifier
 	}
 
-	err = db.StorePublished(id, res)
+	synced := metax.GetModificationDate(res)
+	if synced.IsZero() {
+		fmt.Fprintln(os.Stderr, "Could not find date_modified or date_created from dataset!")
+		synced = time.Now()
+	}
+
+	err = db.StorePublished(id, res, synced)
 	if err != nil {
 		//return err
 		return
@@ -99,10 +105,15 @@ func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID
 		}
 		newQVersionId = &tmp
 
+		synced := metax.GetModificationDate(newVersion)
+		if synced.IsZero() {
+			fmt.Fprintln(os.Stderr, "Could not find date_modified or date_created from new version!")
+			synced = time.Now()
+		}
+
 		// store the new version
 		err = db.WithTransaction(func(tx *psql.Tx) error {
-			// TODO: get created time from HTTP header?
-			return tx.StoreNewVersion(id, *newQVersionId, time.Now(), newVersion)
+			return tx.StoreNewVersion(id, *newQVersionId, synced, newVersion)
 		})
 		if err != nil {
 			return
