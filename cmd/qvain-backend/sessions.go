@@ -76,10 +76,15 @@ func MakeSessionHandlerForFairdata(mgr *sessions.Manager, db *psql.DB, onLogin l
 			return err
 		}
 
+		usingOldProxy := strings.HasSuffix(idToken.Subject, "@fairdataid")
+		identity := idToken.Subject
 		if claims.CSCUserName == "" {
-			return oidc.ErrMissingCSCUserName
+			if !usingOldProxy {
+				return oidc.ErrMissingCSCUserName
+			}
+		} else {
+			identity = claims.CSCUserName
 		}
-		identity := claims.CSCUserName
 
 		uid, isNew, err := db.RegisterIdentity(svc, identity)
 		if err != nil {
