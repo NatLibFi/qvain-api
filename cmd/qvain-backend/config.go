@@ -124,7 +124,7 @@ func (config *Config) initDB(logger zerolog.Logger) (err error) {
 
 // initSessions initialises the session manager.
 func (config *Config) initSessions() error {
-	config.sessions = sessions.NewManager()
+	config.sessions = sessions.NewManager(sessions.WithRequireCSCUserName(!config.DevMode))
 	return nil
 }
 

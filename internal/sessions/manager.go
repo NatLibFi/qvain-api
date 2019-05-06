@@ -25,16 +25,29 @@ type sidGenerator func(string) (string, error)
 
 // Manager handles the actual storage and retrieval of sessions.
 type Manager struct {
-	cache       *cache2go.CacheTable
-	onToken     func(string) (string, error)
-	genTokenSid sidGenerator
+	cache              *cache2go.CacheTable
+	onToken            func(string) (string, error)
+	genTokenSid        sidGenerator
+	RequireCSCUserName bool
+}
+
+type ManagerOption func(*Manager)
+
+func WithRequireCSCUserName(require bool) ManagerOption {
+	return func(mgr *Manager) {
+		mgr.RequireCSCUserName = require
+	}
 }
 
 // NewManager creates a new session storage.
-func NewManager() *Manager {
-	return &Manager{
+func NewManager(opts ...ManagerOption) *Manager {
+	mgr := &Manager{
 		cache: cache2go.Cache("sessions"),
 	}
+	for _, opt := range opts {
+		opt(mgr)
+	}
+	return mgr
 }
 
 // SetOnToken takes a function that can create a session from a token, and optionally
