@@ -12,7 +12,6 @@ BINDIR := $(ROOTDIR)/bin
 DATADIRS := $(addprefix $(ROOTDIR)/,doc bench bin)
 RELEASEDIR=$(ROOTDIR)/release
 SOURCELINK := ${GOBIN}/sourcelink
-MINIFY := $(shell command -v minify 2>/dev/null)
 
 ### VCS
 TAG := $(shell git describe --tags --always --dirty="-dev" 2>/dev/null)
@@ -34,17 +33,9 @@ TRIMFLAGS := -gcflags=all=-trimpath=$(PARENTDIR) -asmflags=all=-trimpath=$(PAREN
 #IMPORT_PATH := $(shell go list -f '{{.ImportPath}}' .)
 #BINARY := $(notdir $(IMPORT_PATH))
 
-# skip minify if command not found (no tabs here!)
-ifdef MINIFY
-    MIN_FILES = $(filter-out %.min.html,$(wildcard templates/*.html))
-else
-    $(warning minify command not found, skipping template minification)
-    MIN_FILES :=
-endif
-
 .PHONY: all install run runall release clean cloc doc prebuild listall
 
-all: listall minify $(CMDS) # badger
+all: listall $(CMDS) # badger
 	@#@echo built all: $(CMDS)
 	@echo build successful!
 
@@ -87,19 +78,10 @@ clean:
 	#rm -f $(foreach cmd,$(CMDS),cmd/$(cmd)/$(cmd))
 	go clean ./...
 	rm -f $(BINDIR)/*
-	#rm -f templates/*.min.html
 
 # generate dependency list
 doc: doc/go_dependencies.md
 	scripts/make_go_dependencies_list.sh
-
-# minify templates
-#minify: $(MIN_FILES) $(MIN_FILES:.html=.min.html)
-minify: $(MIN_FILES:.html=.min.html)
-
-%.min.html: %.html
-	@echo ">>> minifying $< to $@"
-	$(MINIFY) -v --html-keep-document-tags --html-keep-end-tags -o $@ $<
 
 $(SOURCELINK):
 	-go get -v github.com/wvh/sourcelink
