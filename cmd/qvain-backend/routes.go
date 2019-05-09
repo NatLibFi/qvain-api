@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/CSCfi/qvain-api/internal/oidc"
-	"github.com/CSCfi/qvain-api/internal/orcid"
 )
 
 // makeMux sets up the default handlers and returns a mux that can also be used for testing.
@@ -45,23 +44,9 @@ func makeMux(config *Config) *http.ServeMux {
 		mux.HandleFunc("/api/auth/cb", oidcClient.Callback())
 	}
 
-	// ORCID client
-	orcidLogger := config.NewLogger("orcid")
-	if orcidClient, err := orcid.NewOrcidClient("https://developers.google.com/oauthplayground/"); err != nil {
-		orcidLogger.Error().Err(err).Msg("orcid configuration failed")
-	} else {
-		orcidClient.SetLogger(orcidLogger)
-		mux.HandleFunc("/api/auth/orcid/login", orcidClient.Auth())
-		mux.HandleFunc("/api/auth/orcid/cb", orcidClient.Callback())
-	}
-
 	// dataset endpoints
 	//datasetApi := NewDatasetApi(config.db, config.sessions, config.NewLogger("dataset"))
 	//mux.Handle("/api/dataset/", datasetApi)
-
-	// object storage endpoints
-	//objectApi := NewObjectApi(config.db, config.NewLogger("objects"))
-	//mux.Handle("/api/objects/", objectApi)
 
 	// views
 	//viewApi := &ViewApi{db: config.db, logger: config.NewLogger("views")}
