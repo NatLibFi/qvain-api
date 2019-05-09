@@ -37,7 +37,6 @@ type Apis struct {
 	logger zerolog.Logger
 
 	datasets *DatasetApi
-	objects  *ObjectApi
 	sessions *SessionApi
 	auth     *AuthApi
 	proxy    *ApiProxy
@@ -56,7 +55,6 @@ func NewApis(config *Config) *Apis {
 		metax.WithInsecureCertificates(config.DevMode))
 
 	apis.datasets = NewDatasetApi(config.db, config.sessions, metax, config.NewLogger("datasets"))
-	apis.objects = NewObjectApi(config.db, config.NewLogger("objects"))
 	apis.sessions = NewSessionApi(config.sessions, config.db, config.messenger, config.NewLogger("sessions"))
 	apis.sessions.AllowCreate(config.DevMode)
 	apis.auth = NewAuthApi(config, makeOnFairdataLogin(metax, config.db, config.NewLogger("sync")), config.NewLogger("auth"))
@@ -81,9 +79,6 @@ func (apis *Apis) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "datasets/":
 		datasetsC.Add(1)
 		apis.datasets.ServeHTTP(w, r)
-	case "objects/":
-		objectsC.Add(1)
-		apis.objects.ServeHTTP(w, r)
 	case "sessions/":
 		sessionsC.Add(1)
 		apis.sessions.ServeHTTP(w, r)
