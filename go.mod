@@ -11,7 +11,6 @@ require (
 	github.com/gomodule/redigo v2.0.1-0.20181213210501-02dc2736dbc3+incompatible
 	github.com/jackc/pgx v3.3.0+incompatible
 	github.com/json-iterator/go v1.1.6
-	github.com/lestrrat/go-jwx v0.0.0-20180221005942-b7d4802280ae
 	github.com/mattn/go-isatty v0.0.7
 	github.com/muesli/cache2go v0.0.0-20181026141944-493cbf51ac21
 	github.com/pkg/errors v0.8.1 // indirect

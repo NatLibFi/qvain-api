@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 
-	"github.com/CSCfi/qvain-api/internal/jwt"
 	"github.com/CSCfi/qvain-api/internal/oidc"
 	"github.com/CSCfi/qvain-api/internal/orcid"
 )
@@ -24,10 +23,6 @@ func makeMux(config *Config) *http.ServeMux {
 
 	// api endpoint, database check
 	mux.Handle("/api/db", apiDatabaseCheck(config.db))
-
-	// token middleware
-	jwt := jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
-	mux.Handle("/auth/check", jwt.MustToken(http.HandlerFunc(protected)))
 
 	// OIDC client
 	oidcLogger := config.NewLogger("oidc")

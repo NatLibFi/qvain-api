@@ -89,9 +89,6 @@ func main() {
 		logger.Error().Err(err).Msg("session manager failed")
 	}
 
-	// initialise token service
-	config.initTokens()
-
 	// initialise secure messaging service
 	err = config.initMessenger()
 	if err != nil {

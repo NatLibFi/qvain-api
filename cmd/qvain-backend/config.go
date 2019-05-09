@@ -8,7 +8,6 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/CSCfi/qvain-api/internal/jwt"
 	"github.com/CSCfi/qvain-api/internal/psql"
 	"github.com/CSCfi/qvain-api/internal/secmsg"
 	"github.com/CSCfi/qvain-api/internal/sessions"
@@ -46,7 +45,6 @@ type Config struct {
 	// configured service instances
 	db        *psql.DB
 	sessions  *sessions.Manager
-	tokens    *jwt.JwtHandler
 	messenger *secmsg.MessageService
 }
 
@@ -126,11 +124,6 @@ func (config *Config) initDB(logger zerolog.Logger) (err error) {
 func (config *Config) initSessions() error {
 	config.sessions = sessions.NewManager(sessions.WithRequireCSCUserName(!config.DevMode))
 	return nil
-}
-
-// initTokens initialises the token service.
-func (config *Config) initTokens() {
-	config.tokens = jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
 }
 
 // initMessenger initialises the secure message service.
