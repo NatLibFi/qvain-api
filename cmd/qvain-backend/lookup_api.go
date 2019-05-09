@@ -19,11 +19,9 @@ const (
 
 // LookupApi holds the configuration for the identifier lookup service.
 type LookupApi struct {
-	db *psql.DB
-
+	db          *psql.DB
 	frontendURL string
 	apiURL      string
-	allowHttp   bool
 }
 
 // NewLookupApi sets up a basic identifier lookup service.

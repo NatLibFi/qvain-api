@@ -28,8 +28,6 @@ const (
 	strHttpServerPanic = "http server crashed"
 )
 
-var appConfig Config
-
 // startHttpsRedirector spawns a background HTTP server that redirects to https://.
 // NOTE: This function returns immediately.
 func startHttpsRedirector(config *Config) {
