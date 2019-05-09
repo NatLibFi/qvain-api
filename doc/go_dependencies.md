@@ -29,15 +29,6 @@ This auto-generated document lists all imports and indirect package dependencies
 	github.com/jackc/pgx/pgio
 	github.com/jackc/pgx/pgproto3
 	github.com/jackc/pgx/pgtype
-	github.com/lestrrat/go-jwx/internal/base64
-	github.com/lestrrat/go-jwx/internal/option
-	github.com/lestrrat/go-jwx/jwa
-	github.com/lestrrat/go-jwx/jwk
-	github.com/lestrrat/go-jwx/jws
-	github.com/lestrrat/go-jwx/jws/sign
-	github.com/lestrrat/go-jwx/jws/verify
-	github.com/lestrrat/go-jwx/jwt
-	github.com/lestrrat/go-pdebug
 	github.com/mattn/go-isatty
 	github.com/muesli/cache2go
 	github.com/pkg/errors
@@ -59,9 +50,19 @@ This auto-generated document lists all imports and indirect package dependencies
 	golang.org/x/net/context/ctxhttp
 	golang.org/x/oauth2
 	golang.org/x/sys/unix
+	golang.org/x/text/cases
+	golang.org/x/text/internal/tag
+	golang.org/x/text/language
+	golang.org/x/text/runes
+	golang.org/x/text/secure/bidirule
+	golang.org/x/text/secure/precis
+	golang.org/x/text/transform
+	golang.org/x/text/unicode/bidi
+	golang.org/x/text/unicode/norm
+	golang.org/x/text/width
 	gopkg.in/square/go-jose.v2
 	gopkg.in/square/go-jose.v2/cipher
 	gopkg.in/square/go-jose.v2/json
 
 -- 
-generated on 2019-04-03 at commit v0.9.0-2-g20f3fd4 by make_go_dependencies_list.sh
+generated on 2019-05-09 at commit v0.9.0-26-gf19dba8 by make_go_dependencies_list.sh

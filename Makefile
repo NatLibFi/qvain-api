@@ -44,7 +44,7 @@ endif
 
 .PHONY: all install run runall release clean cloc doc prebuild listall
 
-all: listall minify $(CMDS) badger
+all: listall minify $(CMDS) # badger
 	@#@echo built all: $(CMDS)
 	@echo build successful!
 
@@ -53,9 +53,9 @@ $(CMDS): prebuild $(wildcard cmd/$@/*.go)
 	@cd cmd/$@; \
 	$(GO) build -o $(BINDIR)/$@ -ldflags $(LDFLAGS)
 
-badger:
-	@echo building: $@
-	@env GOBIN=$(BINDIR) $(GO) install -v github.com/dgraph-io/badger/...
+# badger:
+#	@echo building: $@
+# 	@env GOBIN=$(BINDIR) $(GO) install -v github.com/dgraph-io/badger/...
 
 # this doesn't actually use make but relies on the build cache in Go 1.10 to build only those files that have changed
 # TODO: what about data directories?
