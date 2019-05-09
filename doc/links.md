@@ -11,7 +11,7 @@ _links to Qvain related resources_
 
 - Qvain backend:
   - [Github](https://github.com/CSCfi/qvain-api) repository
-  - [Github issues](https://github.com/CSCfi/qvain-api/issues) – report bug reports here
+  - [Github issues](https://github.com/CSCfi/qvain-api/issues) – report bugs here
   - [Jira bug tracker](https://jira.eduuni.fi/projects/CSCQVAIN) at CSC – for planning and service integration
   - Documentation:
     - [Rest API](./api.md)
