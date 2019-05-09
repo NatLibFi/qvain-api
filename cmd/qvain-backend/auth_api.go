@@ -48,10 +48,7 @@ func NewAuthApi(config *Config, onLogin loginHook, logger zerolog.Logger) *AuthA
 		}
 	} else {
 		oidcClient.SetLogger(oidcLogger)
-		//oidcClient.OnLogin = MakeSessionHandlerForExternalService(config.sessions, config.db, config.Logger, "fd")
 		oidcClient.OnLogin = MakeSessionHandlerForFairdata(config.sessions, config.db, onLogin, config.Logger, config.oidcProviderName)
-		//mux.HandleFunc("/api/auth/login", oidcClient.Auth())
-		//mux.HandleFunc("/api/auth/cb", oidcClient.Callback())
 		api.oidc.client = oidcClient
 		api.oidc.authorizeHandler = oidcClient.Auth()
 		api.oidc.callbackHandler = oidcClient.Callback()

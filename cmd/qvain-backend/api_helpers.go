@@ -61,13 +61,6 @@ func apiWriteOptions(w http.ResponseWriter, opts string) {
 
 	// actual OPTIONS response
 	w.Header().Set("Allow", opts)
-
-	/*
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-	*/
 }
 
 // jsonError takes an error string and status code and writes them to the response.
@@ -283,17 +276,6 @@ func convertExternalStatusCode(code int) int {
 	}
 }
 
-// responseNotModified
-/*
-func responseNotModified(w http.ResponseWriter, r *http.Request, etag string) {
-	//w.Header().Set("Content-Type", "application/json")
-	if etag != "" {
-		w.Header().Set("ETag", etag)
-	}
-	w.WriteHeader(http.StatusNotModified)
-}
-*/
-
 func ShiftPath(p string) (head, tail string) {
 	if p == "" {
 		return "", "/"
@@ -307,21 +289,6 @@ func ShiftPath(p string) (head, tail string) {
 }
 
 func ShiftUrlWithTrailing(r *http.Request) (head string) {
-	/*
-		if r.URL.Path == "" {
-			r.URL.Path = ""
-			return ""
-		}
-	*/
-
-	/*
-		if r.URL.Path == "/" {
-			r.URL.Path = ""
-			return "/"
-		}
-	*/
-
-	//r.URL.Path = strings.TrimPrefix(path.Clean(r.URL.Path), "/")
 	r.URL.Path = strings.TrimPrefix(r.URL.Path, "/")
 	i := strings.Index(r.URL.Path, "/")
 	if i < 0 {

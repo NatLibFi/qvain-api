@@ -419,59 +419,6 @@ func (db *DB) CheckOwner(id uuid.UUID, owner uuid.UUID) (err error) {
 	return tx.CheckOwner(id, owner)
 }
 
-// MarkPublished marks a dataset as published and updates its sync time. It does not do owner checks.
-/* func (db *DB) MarkPublished(id uuid.UUID, published bool) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = tx.markPublished(id, published)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit()
-}
-
-// MarkPublishedByOwner marks a dataset as published and updates its sync time. It checks if the given user is the dataset's owner first.
-func (db *DB) MarkPublishedWithOwner(id uuid.UUID, owner uuid.UUID, published bool) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	err = tx.CheckOwner(id, owner)
-	if err != nil {
-		return err
-	}
-
-	err = tx.markPublished(id, published)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	return tx.Commit()
-}
-
-// markPublished does the actual marking of a dataset as published.
-func (tx *Tx) markPublished(id uuid.UUID, published bool) error {
-	ct, err := tx.Exec("UPDATE datasets SET published = $2, synced = $3 WHERE id = $1", id.Array(), published, time.Now())
-	if err != nil {
-		return err
-	}
-
-	if ct.RowsAffected() != 1 {
-		return ErrNotFound
-	}
-
-	return nil
-} */
-
 // Get retrieves a dataset from the database.
 func (db *DB) Get(id uuid.UUID) (*models.Dataset, error) {
 	var (

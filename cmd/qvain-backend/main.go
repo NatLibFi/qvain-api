@@ -98,26 +98,7 @@ func main() {
 	// set up default handlers
 	mux := makeMux(config)
 	var handler http.Handler = mux
-
-	// add logging middleware
-	/*
-		if config.LogRequests {
-			handler = makeLoggingHandler(mux, config.NewLogger("http"))
-		}
-	*/
 	_ = handler
-
-	// add session middleware
-	//cookieAuth := xxx
-	//config.Sessions.AddSessionID()
-
-	// add auth middleware
-	/*
-		jwt := jwt.NewJwtHandler(config.tokenKey, config.Hostname, jwt.Verbose, jwt.RequireJwtID, jwt.WithErrorFunc(jsonError))
-		//authMux := jwt.MustToken(loggingMux)
-		authMux := jwt.AppendUser(handler)
-		_ = authMux
-	*/
 
 	apis := NewApis(config)
 	_ = apis
@@ -143,7 +124,6 @@ func main() {
 			}
 		} else {
 			logger.Error().Err(err).Msg("capability check returned error")
-			//fmt.Fprintln(os.Stderr, err)
 		}
 
 		srv.TLSConfig = tlsIntermediateConfig

@@ -3,7 +3,6 @@ package main
 import (
 	"net/http"
 	"strings"
-	//"time"
 
 	"github.com/CSCfi/qvain-api/internal/psql"
 	"github.com/CSCfi/qvain-api/internal/sessions"
@@ -47,7 +46,6 @@ func (api *DatasetApi) SetIdentity(identity string) {
 func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// authenticated api
 	session, err := api.sessions.SessionFromRequest(r)
-	//session, err := api.sessions.Get(sid)
 	if err != nil {
 		api.logger.Error().Err(err).Msg("no session from request")
 		jsonError(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
@@ -64,7 +62,6 @@ func (api *DatasetApi) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// handle self
 		switch r.Method {
 		case http.MethodGet:
-			//time.Sleep(3*time.Second)
 			api.ListDatasets(w, r, user)
 		case http.MethodPost:
 			api.createDataset(w, r, user)

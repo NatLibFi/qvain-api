@@ -76,14 +76,6 @@ func Publish(api *metax.MetaxService, db *psql.DB, id uuid.UUID, owner uuid.UUID
 		return
 	}
 
-	/*
-		//err = psql.MarkPublishedWithOwner(id, owner.Get(), true)
-		err = db.MarkPublished(id, true)
-		if err != nil {
-			return err
-		}
-	*/
-
 	if newVersionId = metax.MaybeNewVersionId(res); newVersionId != "" {
 		fmt.Println("created new version:", newVersionId)
 

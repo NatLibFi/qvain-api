@@ -18,7 +18,6 @@ const RetryInterval = 10 * time.Second
 func Fetch(api *metax.MetaxService, db *psql.DB, logger zerolog.Logger, uid uuid.UUID, extid string) error {
 	last, err := db.GetLastSync(uid)
 	if err != nil && err != psql.ErrNotFound {
-		//fmt.Printf("%T %+v\n", err, err)
 		return err
 	} else if time.Now().Sub(last) < RetryInterval {
 		return fmt.Errorf("too soon")

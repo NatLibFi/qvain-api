@@ -76,16 +76,13 @@ func ConfigFromEnv() (*Config, error) {
 			if err != nil {
 				return nil, fmt.Errorf("can't decode APP_DEV_USER: %s", err)
 			}
-			//fmt.Printf("decoded: %s\n", b)
 			var user models.User
 			user.UnmarshalJSON(b)
-			//fmt.Printf("%+v\n", user)
 		}
 	}
 
 	return &Config{
-		Hostname: hostname,
-		//Port:             env.GetDefault("APP_HTTP_PORT", HttpProxyPort),
+		Hostname:         hostname,
 		Port:             *appHttpPort,
 		Standalone:       env.GetBool("APP_HTTP_STANDALONE"),
 		ForceHttpOnly:    *forceHttpOnly,
