@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// ApiProxy is a reverse proxy.
 type ApiProxy struct {
 	proxy    *httputil.ReverseProxy
 	sessions *sessions.Manager
@@ -29,6 +30,10 @@ func makeProxyErrorHandler(logger zerolog.Logger) func(http.ResponseWriter, *htt
 	}
 }
 
+// NewApiProxy creates a reverse web proxy that uses HTTP Basic Authentication. Used for allowing
+// the front-end user access to the Metax files api. Since this allows the user to access Metax using
+// Qvain service credentials, care needs to be taken that users cannot perform actions they shouldn't
+// have access to.
 func NewApiProxy(upstreamURL string, user string, pass string, sessions *sessions.Manager, logger zerolog.Logger) *ApiProxy {
 	upUrl, err := url.Parse(upstreamURL)
 	if err != nil {
@@ -47,10 +52,13 @@ func NewApiProxy(upstreamURL string, user string, pass string, sessions *session
 	}
 }
 
+// ServeHTTP proxies user requests to Metax so the front-end can query project information from Metax.
+// The query is checked against the user session to make sure that users can only query projects
+// they have access to.
 func (api *ApiProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	api.logger.Debug().Str("path", r.URL.Path).Msg("request path")
 
-	// auth
+	// make sure the user is authenticated
 	session, err := api.sessions.UserSessionFromRequest(r)
 	if err != nil {
 		sessionError(w, err)
@@ -62,7 +70,7 @@ func (api *ApiProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//project := ShiftUrlWithTrailing(r)
+	// allow users to query only projects in their login token
 	if !session.User.HasProject(r.URL.Query().Get("project")) {
 		api.logger.Debug().Strs("projects", session.User.Projects).Str("wanted", r.URL.Query().Get("project")).Msg("project check")
 		jsonError(w, "access denied: invalid project", http.StatusForbidden)
