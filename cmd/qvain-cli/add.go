@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 
 	"github.com/CSCfi/qvain-api/internal/psql"
-	"github.com/CSCfi/qvain-api/pkg/models"
-	"github.com/wvh/uuid/flag"
+	"github.com/CSCfi/qvain-api/pkg/metax"
+	uuidflag "github.com/wvh/uuid/flag"
 )
 
 func runAddRecord(psql *psql.DB, args []string) error {
@@ -15,10 +15,12 @@ func runAddRecord(psql *psql.DB, args []string) error {
 	var (
 		creator uuidflag.Uuid
 		owner   uuidflag.Uuid // = uuidflag.DefaultFromString("053bffbcc41edad4853bea91fc42ea18") // 053bffbcc41edad4853bea91fc42ea18
+		org     string
 		schema  string
 	)
 	flags.Var(&creator, "creator", "creator `uuid`")
 	flags.Var(&owner, "owner", "owner `uuid`")
+	flags.StringVar(&org, "org", "organisaatio", "organization name")
 	flags.StringVar(&schema, "schema", "metax", "schema identifier for given metadata record")
 
 	flags.Usage = usageFor(flags, "add [flags] <json file>")
@@ -44,14 +46,24 @@ func runAddRecord(psql *psql.DB, args []string) error {
 		return fmt.Errorf("error: can't read record: %s", err)
 	}
 
-	record, err := models.NewDataset(creator.Get())
+	dataset, err := metax.NewMetaxDataset(creator.Get())
 	if err != nil {
 		return err
 	}
-	record.SetData(0, schema, blob)
-	fmt.Printf("%+v\n", record)
 
-	err = psql.Create(record)
+	identity, err := psql.GetIdentityForUid("fairdata", creator.Get())
+	if err != nil || identity == "" {
+		// No fairdata id available, use a fake one
+		identity = "qvain-user-" + creator.String()
+	}
+
+	extra := map[string]string{
+		"identity": identity,
+		"org":      org,
+	}
+	dataset.CreateData(metax.MetaxDatasetFamily, schema, blob, extra)
+
+	err = psql.Create(dataset.Unwrap())
 	if err != nil {
 		return err
 	}
