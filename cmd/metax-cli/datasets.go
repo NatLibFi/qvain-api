@@ -102,7 +102,6 @@ func runDatasets(url string, args []string) error {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	//ctx, cancel := context.WithTimeout(context.Background(), 80*time.Millisecond)
 	defer cancel()
 
 	total, c, errc, err := svc.ReadStreamChannel(ctx, metax.WithOwner(owner.String()))

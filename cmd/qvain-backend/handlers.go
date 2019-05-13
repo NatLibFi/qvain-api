@@ -8,16 +8,6 @@ import (
 )
 
 func welcome(w http.ResponseWriter, r *http.Request) {
-	/*
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		if r.Method != http.MethodGet {
-			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
-			return
-		}
-	*/
 	w.Write([]byte("Welcome to the Qvain API server.\n"))
 }
 
@@ -32,24 +22,6 @@ func makeLoggingHandler(prefix string, wrapped http.Handler, logger zerolog.Logg
 		url := prefix + r.URL.String()
 		h := httpsnoop.CaptureMetrics(wrapped, w, r)
 
-		/*
-			var uid string
-			if jwt, ok := jwt.FromContext(r.Context()); ok {
-				uid = jwt.Subject()
-			}
-		*/
-
 		logger.Log().Str("method", r.Method).Str("url", url).Int("status", h.Code).Dur("⌛", h.Duration).Str("Δt", h.Duration.String()).Int64("written", h.Written).Msg("request")
 	})
 }
-
-// LoggingHandler wraps a handler with request logging middleware.
-/*
-func LoggingHandler(wrapped http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		h := httpsnoop.CaptureMetrics(wrapped, w, r)
-		//_ = m
-		logger.Log().Str("method", r.Method).Str("url", r.URL.String()).Int("status", h.Code).Dur("⌛", h.Duration).Str("Δt", h.Duration.String()).Int64("written", h.Written).Msg("request")
-	})
-}
-*/
