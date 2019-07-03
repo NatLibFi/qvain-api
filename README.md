@@ -119,3 +119,13 @@ usage: bin/metax-cli <sub-command> [flags]
   version    query version
 
 ```
+
+# License
+
+Copyright (c) 2016-2018 The National Library of Finland
+Copyright (c) 2019 The Ministry of Education and Culture of Finland
+
+Licensed under the GNU GPL 3.0.
+
+This repository contains third party software.
+Individual package dependencies remain the property of their respective owners and under their own respective licenses.
